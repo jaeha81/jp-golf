@@ -1,0 +1,19 @@
+{
+  "name": "JP Golf 일본 골프 상담",
+  "short_name": "JP Golf",
+  "description": "한국어로 일본 골프 여행 조건을 상담하는 베타 앱",
+  "lang": "ko",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8f4ed",
+  "theme_color": "#0f2d24",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

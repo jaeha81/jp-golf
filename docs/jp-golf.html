@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JP Golf — 일본 골프 상담 베타</title>
 <meta name="description" content="일본 골프 예시 정보를 한국어 상담으로 안내하고 제휴사 공식 예약 페이지로 연결합니다. 지역·날짜·인원을 말씀해 주세요.">
+<meta name="theme-color" content="#0f2d24">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
@@ -508,6 +511,55 @@
   .chat-send:hover { background: var(--green); }
   .chat-send svg { width: 16px; height: 16px; }
 
+  .booking-fields {
+    border-top: 1px solid var(--border);
+    background: var(--cream);
+    padding: 10px 18px 8px;
+    display: grid;
+    grid-template-columns: 1.25fr 0.9fr 1.25fr auto;
+    gap: 8px;
+    align-items: end;
+  }
+  .booking-field { min-width: 0; }
+  .booking-field label {
+    display: block;
+    color: var(--gray);
+    font-size: 0.68rem;
+    font-weight: 700;
+    margin: 0 0 4px 6px;
+  }
+  .booking-field input,
+  .booking-field select {
+    width: 100%;
+    min-height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--white);
+    color: var(--ink);
+    padding: 7px 9px;
+    font: inherit;
+    font-size: 0.78rem;
+  }
+  .booking-field input:focus,
+  .booking-field select:focus {
+    outline: 2px solid rgba(28, 77, 62, 0.18);
+    border-color: var(--green-soft);
+  }
+  .booking-apply {
+    min-height: 36px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--gold);
+    color: var(--white);
+    padding: 0 12px;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .booking-apply:hover { background: #9c712f; }
+
   /* Trust band */
   .trust-band {
     background: var(--green-deep);
@@ -880,6 +932,9 @@
       gap: 40px;
     }
     .chat-widget { height: 540px; }
+    .booking-fields { grid-template-columns: 1fr 1fr; }
+    .booking-field:nth-child(3) { grid-column: 1 / 2; }
+    .booking-apply { grid-column: 2 / 3; }
     .trust-inner { grid-template-columns: repeat(2, 1fr); }
     .steps { grid-template-columns: 1fr; }
     section.block { padding: 72px 24px 24px; }
@@ -959,6 +1014,31 @@
       </div>
     </div>
     <div class="chat-body" id="chatBody"></div>
+    <div class="booking-fields" aria-label="골프 상담 조건 입력">
+      <div class="booking-field">
+        <label for="golfDate">희망 날짜</label>
+        <input type="date" id="golfDate" aria-label="희망 라운딩 날짜">
+      </div>
+      <div class="booking-field">
+        <label for="golfPlayers">플레이 인원</label>
+        <select id="golfPlayers" aria-label="플레이 인원">
+          <option value="">인원 선택</option>
+          <option value="1">1명</option>
+          <option value="2">2명</option>
+          <option value="3">3명</option>
+          <option value="4">4명</option>
+          <option value="5">5명</option>
+          <option value="6">6명</option>
+          <option value="7">7명</option>
+          <option value="8">8명 이상</option>
+        </select>
+      </div>
+      <div class="booking-field">
+        <label for="golfBudget">1인당 선호 예산</label>
+        <input type="number" id="golfBudget" min="0" max="100000000" step="1000" inputmode="numeric" placeholder="예: 200000" aria-label="1인당 선호 예산">
+      </div>
+      <button type="button" class="booking-apply" id="applyBookingFields">상담에 반영</button>
+    </div>
     <form class="chat-input" id="chatForm">
       <input type="text" id="chatInput" placeholder="메시지를 입력하세요…" autocomplete="off">
       <button type="submit" class="chat-send" aria-label="전송">
@@ -1259,6 +1339,10 @@
   const body = document.getElementById('chatBody');
   const form = document.getElementById('chatForm');
   const input = document.getElementById('chatInput');
+  const golfDate = document.getElementById('golfDate');
+  const golfPlayers = document.getElementById('golfPlayers');
+  const golfBudget = document.getElementById('golfBudget');
+  const applyBookingFields = document.getElementById('applyBookingFields');
 
   let chatMessages = [];
   let selectedCourse = null;
@@ -1372,6 +1456,26 @@
     { name: '나리타 노스 컨트리클럽', jp: '成田ノースCC', region: '나리타 인근', time: '7:30 / 8:10 가능', price: 16800 }
   ];
 
+  function formatDate(value) {
+    if (!value) return '';
+    const [year, month, day] = value.split('-');
+    return `${year}년 ${Number(month)}월 ${Number(day)}일`;
+  }
+
+  function applySelectedConditions() {
+    const parts = [];
+    if (golfDate.value) parts.push(`희망 날짜는 ${formatDate(golfDate.value)}입니다.`);
+    if (golfPlayers.value) parts.push(`플레이 인원은 ${golfPlayers.value === '8' ? '8명 이상' : `${golfPlayers.value}명`}입니다.`);
+    if (golfBudget.value) parts.push(`1인당 선호 예산은 ${Number(golfBudget.value).toLocaleString('ko-KR')}원입니다.`);
+    if (!parts.length) {
+      addMsg('ai', '날짜, 인원, 예산 중 하나 이상을 선택해 주세요.');
+      return;
+    }
+    applyBookingFields.disabled = true;
+    handleUserInput(parts.join(' '));
+    window.setTimeout(() => { applyBookingFields.disabled = false; }, 500);
+  }
+
   function handleUserInput(text, options = {}) {
     if (!options.skipEcho) addMsg('user', text);
 
@@ -1460,6 +1564,7 @@
     input.value = '';
     handleUserInput(text);
   });
+  applyBookingFields.addEventListener('click', applySelectedConditions);
 
   // FAQ toggle
   document.querySelectorAll('.faq-item').forEach(item => {
@@ -1472,6 +1577,10 @@
   (async function init() {
     chatMessages = [];
     selectedCourse = null;
+    const today = new Date();
+    const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
+      .toISOString().slice(0, 10);
+    golfDate.min = localToday;
     await delay(400);
     addMsg('ai', '안녕하세요~ JP Golf 상담 AI예요 😊');
     await delay(500);
@@ -1479,6 +1588,10 @@
     await aiSay(greeting, ['도쿄 근교', '오사카 · 교토', '후쿠오카', '하코네 · 후지']);
     chatMessages = [{ role: 'assistant', content: '안녕하세요~ JP Golf 상담 AI예요 😊 ' + greeting }];
   })();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
 })();
 </script>
 

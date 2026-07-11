@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0f2d24"/>
+  <circle cx="256" cy="256" r="148" fill="#b8893d"/>
+  <path d="M256 126v242M190 168c42-24 90-24 132 0M190 344c42 24 90 24 132 0" fill="none" stroke="#f8f4ed" stroke-width="24" stroke-linecap="round"/>
+  <text x="256" y="282" text-anchor="middle" font-family="Arial,sans-serif" font-size="76" font-weight="800" fill="#0f2d24">JP</text>
+</svg>
