@@ -1016,7 +1016,7 @@
 <!-- How it works -->
 <section class="block" id="how">
   <div class="section-eyebrow">How it works</div>
-  <h2 class="section-title">AI가 먼저 말을 건네는, 진짜 편한 예약</h2>
+  <h2 class="section-title">AI가 먼저 말을 건네는, 편한 골프 상담</h2>
   <p class="section-lead">
     딱딱한 폼도, 끝없는 옵션 선택도 없습니다.
     AI가 실제 상담사처럼 자연스럽게 먼저 물어봐요. 손님은 편하게 대답만 하시면 됩니다.
@@ -1029,8 +1029,8 @@
     </div>
     <div class="step">
       <div class="step-num">STEP 02</div>
-      <h3>AI가 즉시 검색합니다</h3>
-      <p>락쿠텐 고라 등 일본 골프 예약 사이트를 직접 조회해 가용 티타임·코스 정보·가격을 한국어로 정리해 제시합니다. 마음에 안 들면 즉시 다른 옵션을 다시 찾습니다.</p>
+      <h3>AI가 조건을 정리해요</h3>
+      <p>지역·날짜·인원·예산을 바탕으로 현재 준비된 예시 코스와 상담 흐름을 한국어로 안내합니다. 실제 가격과 예약 가능 여부는 공식 예약 페이지에서 확인해 주세요.</p>
     </div>
     <div class="step">
       <div class="step-num">STEP 03</div>
@@ -1043,9 +1043,9 @@
 <!-- Popular courses -->
 <section class="block" id="courses">
   <div class="section-eyebrow">Popular Courses</div>
-  <h2 class="section-title">한국 골퍼가 가장 많이 찾는<br>일본 인기 골프장</h2>
+  <h2 class="section-title">지역별로 살펴보는<br>일본 골프장 예시</h2>
   <p class="section-lead">
-    도쿄 근교부터 오사카·후쿠오카까지. 항공편 접근성과 코스 난이도, 한국어 응대 가능 여부를 함께 안내합니다.
+    도쿄 근교부터 오사카·후쿠오카까지. 현재 베타에서 사용하는 예시 코스이며 실제 조건은 공식 예약 페이지에서 확인해야 합니다.
   </p>
   <div class="course-grid">
     <article class="course-card">
@@ -1475,7 +1475,7 @@
     await delay(400);
     addMsg('ai', '안녕하세요~ JP Golf 상담 AI예요 😊');
     await delay(500);
-    const greeting = '일본 골프 여행 계획 중이세요? 어디로 가고 싶으세요? 대충 말씀해 주셔도 제가 다 알아서 찾아드릴게요!';
+    const greeting = '일본 골프 여행 계획 중이세요? 어디로 가고 싶으세요? 편하게 말씀해 주시면 조건에 맞는 예시 코스를 안내해 드릴게요!';
     await aiSay(greeting, ['도쿄 근교', '오사카 · 교토', '후쿠오카', '하코네 · 후지']);
     chatMessages = [{ role: 'assistant', content: '안녕하세요~ JP Golf 상담 AI예요 😊 ' + greeting }];
   })();
