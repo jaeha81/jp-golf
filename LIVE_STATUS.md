@@ -13,7 +13,7 @@
 
 ## 현재 외부 상태
 
-- Preview 배포: `https://jp-golf-qvkofl56s-dltkddlf231-8261s-projects.vercel.app`
+- Preview 배포: `https://jp-golf-ohqsafnbj-dltkddlf231-8261s-projects.vercel.app`
   - Vercel Authentication 보호 상태. 로그인된 브라우저에서 확인해야 함.
 - Production 별칭 `https://jp-golf.vercel.app`는 키 미설정 상태에서의 오배포를 제거했으며 현재 404.
 - Vercel Production 환경변수 `GEMINI_API_KEY`는 아직 없음.
