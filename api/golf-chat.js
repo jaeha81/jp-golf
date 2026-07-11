@@ -114,11 +114,6 @@ export default async function handler(req, res) {
   );
 
   if (!geminiRes.ok) {
-    const upstreamError = await geminiRes.text();
-    console.error('Gemini upstream error', {
-      status: geminiRes.status,
-      body: upstreamError.slice(0, 500),
-    });
     res.status(502).json({ error: 'Upstream API error' });
     return;
   }
