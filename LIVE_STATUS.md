@@ -1,4 +1,4 @@
-# JP Golf Gate A — 현재 실사용 준비 상태
+# JP Golf Gate A — 현재 실사용 상태
 
 기준일: 2026-07-12 (KST)
 
@@ -6,31 +6,39 @@
 
 - 원본 `G:\내 드라이브\obsidian-agent-brain-system` 및 `G:\내 드라이브\Jh-golf`는 수정하지 않음.
 - JP Golf 관련 파일과 필터링된 Git 이력을 임시 로컬 복제본에서 대상 저장소로 배치함.
-- 로컬 커밋 3개 생성: `804de88`, `78c1ac0`, `628512b`.
-- `api/golf-chat.js` 입력 검증, 길이 제한, rate limit, upstream 오류 비노출, Vercel body 파싱을 반영함.
-- `tests/golf-chat.smoke.mjs` 통과.
-- Vercel 프로젝트 `jp-golf` 생성 및 Preview 배포 완료.
+- `api/golf-chat.js`를 Google Interactions API v1과 AQ Authorization Key 방식으로 전환함.
+- 입력 검증, 길이 제한, rate limit, 15초 upstream timeout, 오류 상세 비노출을 반영함.
+- `tests/golf-chat.smoke.mjs`에서 정상 응답, 입력 오류, rate limit, 네트워크 예외, 비JSON 응답, 대체 환경변수를 검증함.
+- Vercel 프로젝트 `jp-golf` 생성, AQ 키 등록, Production 배포 완료.
+- 브라우저에서 메시지 입력 → API 호출 → 한국어 응답 표시까지 실제 검증함.
+- 베타 기능보다 앞선 실시간 조회·예약 확정 표현을 공개 화면에서 제거함.
 
 ## 현재 외부 상태
 
-- Preview 배포: `https://jp-golf-li9pf04il-dltkddlf231-8261s-projects.vercel.app`
-  - Vercel Authentication 보호 상태. 로그인된 브라우저에서 확인해야 함.
-- Production 별칭 `https://jp-golf.vercel.app`는 키 미설정 상태에서의 오배포를 제거했으며 현재 404.
-- `GEMINI_API_KEY` 변수는 Preview/Production에 있으나 저장된 값이 실제 AQ 키가 아니라 PowerShell 명령문으로 확인됨(`length=88`, `prefix=& $`, 공백 포함). Google의 `API_KEY_INVALID` 원인은 키 호환성이 아니라 잘못 저장된 값임.
-- Git remote는 아직 없음. 원본 저장소로 push하지 않도록 의도적으로 비워 둠.
+- Production: `https://jp-golf.vercel.app`
+- 최신 배포: `https://jp-golf-wpt8bfbo2-dltkddlf231-8261s-projects.vercel.app`
+- 홈페이지: HTTP 200
+- `POST /api/golf-chat`: HTTP 200, 정상 한국어 상담 응답 확인
+- 브라우저 콘솔 오류: 없음
+- `GEMINI_API_KEY`: Preview/Production에 암호화 등록됨
+- Git remote: 없음. 보호 대상 원본 저장소로 push하지 않도록 비워 둠.
 
-## 실제 사용 직전 사용자가 해야 할 입력
+## 현재 사용 가능한 범위
 
-1. Vercel Dashboard의 `jp-golf` 프로젝트에서 `Settings → Environment Variables`로 이동.
-2. 이름 `GEMINI_API_KEY`, 값은 Google AI Studio에서 발급한 키, 대상은 `Production`과 `Preview`를 선택해 저장.
-   - 키 자체를 채팅에 붙여넣지 말 것.
-3. 새로 만든 독립 GitHub 저장소 URL을 준비해 전달할 것. 원본 `obsidian-agent-brain-system` URL은 사용하지 않음.
-4. 키 저장 후 Preview 재배포 및 POST `/api/golf-chat` 실사용 확인을 진행하고, 그 다음에만 Production 승격.
+- 지역·날짜·인원·예산을 묻는 한국어 AI 상담
+- 예시 골프장·가격을 이용한 베타 상담 흐름
+- 최종 예약은 공식 예약 페이지에서 사용자가 직접 진행한다는 안내
 
-## 남은 승인 게이트
+현재 제공하지 않는 기능: 실시간 티타임 조회, 자동 예약, 결제, 입금 확인, 취소·변경 처리, 관리자 큐.
 
-- Gemini API 키 입력 및 비용/쿼터 확인.
-- 독립 GitHub 원격 저장소 생성·연결 여부.
-- 실제 도메인과 서비스 약관/개인정보 문구 승인.
-- 라이브 검색, 자동 예약, 결제, 관리자 큐는 MVP 이후 기능으로 별도 승인 필요.
-- Google 권장 Interactions API 전환은 완료됨. 전용 `scripts/set-gemini-key.ps1`로 실제 AQ 키를 다시 저장한 뒤 재배포·실호출 검증이 필요하며, 현재 Production은 오작동 공개를 막기 위해 제거됨.
+## 남은 사업·수익화 게이트
+
+- 독립 GitHub 원격 저장소 생성·연결 및 push.
+- 실제 도메인 결정.
+- 이용약관, 개인정보처리방침, 사업자 정보 확정.
+- 제휴 예약처 계약과 실제 공식 예약 링크 확정.
+- 실시간 코스·가격·재고 데이터 공급 방식 승인.
+- 결제/수수료/제휴 전환 중 수익모델 선택과 구현.
+- Gemini 비용·쿼터·오류율 모니터링 및 운영 알림 설정.
+
+현재 단계는 **공개 베타 상담 서비스 사용 가능**이며, **자동 예약·결제 기반 수익화 운영은 아직 아님**.
