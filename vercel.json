@@ -18,6 +18,10 @@
   ],
   "rewrites": [
     {
+      "source": "/admin",
+      "destination": "/docs/admin.html"
+    },
+    {
       "source": "/manifest.webmanifest",
       "destination": "/docs/manifest.webmanifest"
     },

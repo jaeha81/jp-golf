@@ -1039,6 +1039,14 @@
       </div>
       <button type="button" class="booking-apply" id="applyBookingFields">상담에 반영</button>
     </div>
+    <form id="requestForm" class="booking-fields" aria-label="상담 의뢰 저장">
+      <div class="booking-field"><label for="requestName">이름</label><input id="requestName" required maxlength="80" autocomplete="name" placeholder="홍길동"></div>
+      <div class="booking-field"><label for="requestContact">연락처</label><input id="requestContact" required maxlength="120" autocomplete="tel" placeholder="이메일 또는 전화번호"></div>
+      <div class="booking-field" style="grid-column: 1 / -1"><label for="requestNote">원하는 조건</label><textarea id="requestNote" required maxlength="2000" rows="2" placeholder="지역, 일정, 라운드 수 등"></textarea></div>
+      <label style="grid-column: 1 / -1; font-size: .78rem"><input type="checkbox" id="requestConsent" required> 상담 처리를 위해 입력한 연락처를 이용하는 데 동의합니다.</label>
+      <button type="submit" class="booking-apply" id="submitRequest">상담 의뢰 저장</button>
+      <p id="requestStatus" role="status" style="grid-column: 1 / -1; font-size: .8rem"></p>
+    </form>
     <form class="chat-input" id="chatForm">
       <input type="text" id="chatInput" placeholder="메시지를 입력하세요…" autocomplete="off">
       <button type="submit" class="chat-send" aria-label="전송">
@@ -1565,6 +1573,32 @@
     handleUserInput(text);
   });
   applyBookingFields.addEventListener('click', applySelectedConditions);
+  document.getElementById('requestForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const submit = document.getElementById('submitRequest');
+    const status = document.getElementById('requestStatus');
+    submit.disabled = true;
+    status.textContent = '저장 중입니다…';
+    try {
+      const response = await fetch('/api/admin-requests', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('requestName').value,
+          contact: document.getElementById('requestContact').value,
+          golfDate: document.getElementById('golfDate').value,
+          players: document.getElementById('golfPlayers').value,
+          budgetPerPerson: document.getElementById('golfBudget').value,
+          request: document.getElementById('requestNote').value
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '저장에 실패했습니다.');
+      status.textContent = `의뢰가 접수되었습니다. 접수번호 ${data.request.id}`;
+      event.target.reset();
+    } catch (error) {
+      status.textContent = error.message;
+    } finally { submit.disabled = false; }
+  });
 
   // FAQ toggle
   document.querySelectorAll('.faq-item').forEach(item => {
