@@ -33,4 +33,4 @@
 - 독립 GitHub 원격 저장소 생성·연결 여부.
 - 실제 도메인과 서비스 약관/개인정보 문구 승인.
 - 라이브 검색, 자동 예약, 결제, 관리자 큐는 MVP 이후 기능으로 별도 승인 필요.
-- AQ 인증 키를 계속 사용할 경우 Google OAuth/서비스 계정 방식 또는 Interactions API 전환이 필요하며, 현재 Production은 오작동 공개를 막기 위해 제거됨.
+- AQ 인증 키에 맞춰 Interactions API로도 전환했으나 Production 검증에서 502가 재현됨. 현재 Production은 오작동 공개를 막기 위해 제거됨. 다음 단계는 Google Cloud 서비스 계정 OAuth 인증 또는 Google이 외부 서버 호출을 허용하는 표준/제한 키 확보임.
