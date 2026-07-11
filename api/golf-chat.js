@@ -63,6 +63,8 @@ export default async function handler(req, res) {
   let body = {};
   if (req.body && typeof req.body === 'object') {
     body = req.body;
+  } else if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
+    try { body = JSON.parse(req.body.toString()); } catch { body = {}; }
   } else {
     const raw = await new Promise((resolve) => {
       const chunks = [];
