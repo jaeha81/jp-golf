@@ -118,7 +118,11 @@ export default async function handler(req, res) {
           system_instruction: SYSTEM_PROMPT,
           input,
           store: false,
-          generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
+          generation_config: {
+            max_output_tokens: MAX_OUTPUT_TOKENS,
+            thinking_level: 'minimal',
+            thinking_summaries: 'none',
+          },
         }),
         signal: AbortSignal.timeout(15_000),
       },

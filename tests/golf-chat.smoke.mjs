@@ -95,7 +95,11 @@ const upstreamBody = JSON.parse(calls[0].options.body);
 assert.equal(upstreamBody.model, 'models/gemini-3.5-flash');
 assert.equal(typeof upstreamBody.system_instruction, 'string');
 assert.equal(upstreamBody.store, false);
-assert.deepEqual(upstreamBody.generation_config, { max_output_tokens: 512 });
+assert.deepEqual(upstreamBody.generation_config, {
+  max_output_tokens: 512,
+  thinking_level: 'minimal',
+  thinking_summaries: 'none',
+});
 assert.deepEqual(upstreamBody.input, [
   { type: 'user_input', content: [{ type: 'text', text: '도쿄 골프장을 추천해줘' }] },
   { type: 'model_output', content: [{ type: 'text', text: '날짜와 인원을 알려주세요.' }] },
