@@ -13,10 +13,10 @@
 
 ## 현재 외부 상태
 
-- Preview 배포: `https://jp-golf-ohqsafnbj-dltkddlf231-8261s-projects.vercel.app`
+- Preview 배포: `https://jp-golf-li9pf04il-dltkddlf231-8261s-projects.vercel.app`
   - Vercel Authentication 보호 상태. 로그인된 브라우저에서 확인해야 함.
 - Production 별칭 `https://jp-golf.vercel.app`는 키 미설정 상태에서의 오배포를 제거했으며 현재 404.
-- `GEMINI_API_KEY`는 Preview/Production에 등록됨. AQ 인증 키를 legacy `generateContent` REST 경로로 호출하면 Google이 `API_KEY_INVALID`를 반환함.
+- `GEMINI_API_KEY` 변수는 Preview/Production에 있으나 저장된 값이 실제 AQ 키가 아니라 PowerShell 명령문으로 확인됨(`length=88`, `prefix=& $`, 공백 포함). Google의 `API_KEY_INVALID` 원인은 키 호환성이 아니라 잘못 저장된 값임.
 - Git remote는 아직 없음. 원본 저장소로 push하지 않도록 의도적으로 비워 둠.
 
 ## 실제 사용 직전 사용자가 해야 할 입력
@@ -33,4 +33,4 @@
 - 독립 GitHub 원격 저장소 생성·연결 여부.
 - 실제 도메인과 서비스 약관/개인정보 문구 승인.
 - 라이브 검색, 자동 예약, 결제, 관리자 큐는 MVP 이후 기능으로 별도 승인 필요.
-- AQ 인증 키에 맞춰 Interactions API로도 전환했으나 Production 검증에서 502가 재현됨. 현재 Production은 오작동 공개를 막기 위해 제거됨. 다음 단계는 Google Cloud 서비스 계정 OAuth 인증 또는 Google이 외부 서버 호출을 허용하는 표준/제한 키 확보임.
+- Google 권장 Interactions API 전환은 완료됨. 전용 `scripts/set-gemini-key.ps1`로 실제 AQ 키를 다시 저장한 뒤 재배포·실호출 검증이 필요하며, 현재 Production은 오작동 공개를 막기 위해 제거됨.

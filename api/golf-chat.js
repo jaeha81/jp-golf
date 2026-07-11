@@ -91,24 +91,31 @@ export default async function handler(req, res) {
     normalizedMessages.push({ role: message.role, content });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  const apiKey = (
+    process.env.GEMINI_API_KEY
+    || process.env.GOOGLE_API_KEY
+    || process.env.GOOGLE_AI_API_KEY
+    || ''
+  ).trim();
   if (!apiKey) {
     res.status(500).json({ error: 'API key not configured' });
     return;
   }
 
-  const input = normalizedMessages
-    .map(message => `${message.role === 'assistant' ? '상담 AI' : '사용자'}: ${message.content}`)
-    .join('\n');
+  const input = normalizedMessages.map(message => ({
+    type: message.role === 'assistant' ? 'model_output' : 'user_input',
+    content: [{ type: 'text', text: message.content }],
+  }));
   const geminiRes = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/interactions',
+    'https://generativelanguage.googleapis.com/v1/interactions',
     {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
-        model: FREE_MODEL,
+        model: FREE_MODEL.startsWith('models/') ? FREE_MODEL : `models/${FREE_MODEL}`,
         system_instruction: SYSTEM_PROMPT,
         input,
+        store: false,
         generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
       }),
     },
@@ -119,10 +126,14 @@ export default async function handler(req, res) {
     return;
   }
   const data = await geminiRes.json();
-  const output = data?.steps?.find(step => step?.type === 'model_output')?.content;
-  const content = Array.isArray(output)
-    ? output.map(part => part?.text || '').join('').trim()
-    : (typeof output === 'string' ? output : '');
+  const modelOutput = data?.steps?.filter(step => step?.type === 'model_output').at(-1);
+  const content = Array.isArray(modelOutput?.content)
+    ? modelOutput.content
+      .filter(part => part?.type === 'text' && typeof part.text === 'string')
+      .map(part => part.text)
+      .join('')
+      .trim()
+    : '';
   if (!content) {
     res.status(502).json({ error: 'Empty upstream response' });
     return;
