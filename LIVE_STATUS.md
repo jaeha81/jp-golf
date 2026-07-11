@@ -16,7 +16,7 @@
 - Preview 배포: `https://jp-golf-ohqsafnbj-dltkddlf231-8261s-projects.vercel.app`
   - Vercel Authentication 보호 상태. 로그인된 브라우저에서 확인해야 함.
 - Production 별칭 `https://jp-golf.vercel.app`는 키 미설정 상태에서의 오배포를 제거했으며 현재 404.
-- `GEMINI_API_KEY`는 Preview/Production에 등록됨. Google Generative Language API 직접 호출 검증은 `403 Forbidden`으로 거부되어 키 권한 또는 연결 프로젝트 설정 확인이 필요함.
+- `GEMINI_API_KEY`는 Preview/Production에 등록됨. AQ 인증 키를 legacy `generateContent` REST 경로로 호출하면 Google이 `API_KEY_INVALID`를 반환함.
 - Git remote는 아직 없음. 원본 저장소로 push하지 않도록 의도적으로 비워 둠.
 
 ## 실제 사용 직전 사용자가 해야 할 입력
@@ -33,3 +33,4 @@
 - 독립 GitHub 원격 저장소 생성·연결 여부.
 - 실제 도메인과 서비스 약관/개인정보 문구 승인.
 - 라이브 검색, 자동 예약, 결제, 관리자 큐는 MVP 이후 기능으로 별도 승인 필요.
+- AQ 인증 키를 계속 사용할 경우 Google OAuth/서비스 계정 방식 또는 Interactions API 전환이 필요하며, 현재 Production은 오작동 공개를 막기 위해 제거됨.
