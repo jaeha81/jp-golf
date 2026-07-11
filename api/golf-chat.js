@@ -14,10 +14,49 @@ const SYSTEM_PROMPT = `당신은 일본 골프 예약을 도와주는 친근한 
 - 예산이 맞지 않거나 원하는 지역이 없으면 솔직하게 알려주세요`;
 
 const FREE_MODEL = process.env.JP_GOLF_GEMINI_MODEL || 'gemini-2.5-flash-lite';
+const MAX_MESSAGES = 20;
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_TOTAL_LENGTH = 12000;
+const MAX_OUTPUT_TOKENS = 512;
+
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_MAX_KEYS = 1000;
+const rateLimitStore = globalThis.__jpGolfRateLimit ?? new Map();
+globalThis.__jpGolfRateLimit = rateLimitStore;
+
+function getClientIp(req) {
+  const forwarded = req.headers?.['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.trim()) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.socket?.remoteAddress || 'unknown';
+}
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore) {
+    if (entry.resetAt <= now) rateLimitStore.delete(key);
+  }
+  let entry = rateLimitStore.get(ip);
+  if (!entry) {
+    if (rateLimitStore.size >= RATE_LIMIT_MAX_KEYS) return true;
+    entry = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+    rateLimitStore.set(ip, entry);
+  }
+  entry.count += 1;
+  return entry.count > RATE_LIMIT_MAX;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
+    return;
+  }
+
+  if (isRateLimited(getClientIp(req))) {
+    res.setHeader('Retry-After', String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)));
+    res.status(429).json({ error: 'Too many requests' });
     return;
   }
 
@@ -34,12 +73,32 @@ export default async function handler(req, res) {
   }
 
   const { messages } = body;
-  if (!Array.isArray(messages) || messages.length === 0) {
+
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) {
     res.status(400).json({ error: 'messages array required' });
     return;
   }
 
   // MVP 무료 검증 단계: 전 모드 Gemini 2.5 Flash-Lite 무료 티어 사용.
+  const normalizedMessages = [];
+  let totalLength = 0;
+  for (const message of messages) {
+    if (!message || !['user', 'assistant'].includes(message.role) || typeof message.content !== 'string') {
+      res.status(400).json({ error: 'invalid message format' });
+      return;
+    }
+    const content = message.content.trim();
+    if (!content || content.length > MAX_MESSAGE_LENGTH) {
+      res.status(400).json({ error: 'message length is invalid' });
+      return;
+    }
+    totalLength += content.length;
+    if (totalLength > MAX_TOTAL_LENGTH) {
+      res.status(400).json({ error: 'conversation is too long' });
+      return;
+    }
+    normalizedMessages.push({ role: message.role, content });
+  }
   // 결제 연동(가이드모드) 완료 후 Claude Haiku 4.5 유료 전환 예정 — ObsidianVault/03_Projects/jp-golf/2026-07-04-ai-api-stack.md 참조.
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) {
@@ -48,13 +107,14 @@ export default async function handler(req, res) {
   }
 
   const geminiRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${FREE_MODEL}:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${FREE_MODEL}:generateContent`,
     {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: messages.map(m => ({
+        generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
+        contents: normalizedMessages.map(m => ({
           role: m.role === 'assistant' ? 'model' : 'user',
           parts: [{ text: m.content }],
         })),
@@ -63,8 +123,7 @@ export default async function handler(req, res) {
   );
 
   if (!geminiRes.ok) {
-    const err = await geminiRes.text();
-    res.status(502).json({ error: 'Upstream API error', detail: err });
+    res.status(502).json({ error: 'Upstream API error' });
     return;
   }
 
