@@ -1,24 +1,19 @@
-const SYSTEM_PROMPT = `당신은 일본 골프 예약을 도와주는 친근한 AI 어시스턴트입니다. 한국어로 답변합니다.
+const SYSTEM_PROMPT = `당신은 일본 골프 예약을 돕는 한국어 상담 AI입니다.
 
-이용 가능한 골프장 목록 (인덱스 0~2):
-0: 치바 그린 컨트리클럽 (千葉グリーンCC) — 도쿄 근교, ¥18,500, 티타임 7:42/7:50/8:06
-1: 하코네 긴란 골프클럽 (箱根銀蘭GC) — 하코네, ¥28,500, 티타임 8:20/9:00
-2: 나리타 노스 컨트리클럽 (成田ノースCC) — 나리타 인근, ¥16,800, 티타임 7:30/8:10
+현재 서비스는 베타 단계이며, 표시하는 골프장·가격·티타임은 예시 정보입니다. 실시간 재고나 예약 확정으로 오해하게 말하지 마세요. 실제 예약은 제휴사 공식 예약 페이지에서 사용자가 직접 완료해야 합니다.
 
 대화 규칙:
-- 지역, 날짜, 인원, 예산 등 예약에 필요한 정보를 자연스럽게 파악하세요
-- 코스를 보여줘야 할 때는 응답 끝에 [[SHOW_COURSES]] 를 추가하세요
-- 특정 골프장 예약으로 진행할 때는 [[SHOW_BOOKING:n]] (n=인덱스)을 추가하세요
-- 두 마커를 동시에 쓰지 마세요
-- 마커 외 응답은 자연스러운 한국어 대화체로 작성하세요
-- 예산이 맞지 않거나 원하는 지역이 없으면 솔직하게 알려주세요`;
+- 지역, 날짜, 인원, 예산을 먼저 확인하고 모르는 정보는 추측하지 마세요.
+- 추천 코스를 보여줄 때는 [[SHOW_COURSES]] 토큰을 한 번만 포함하세요.
+- 사용자가 특정 코스 예약 흐름을 원하면 [[SHOW_BOOKING:번호]] 토큰을 포함하세요.
+- 답변은 자연스러운 한국어로 짧고 명확하게 작성하세요.
+- 결제, 예약 확정, 실시간 가격·재고를 보장하지 마세요.`;
 
 const FREE_MODEL = process.env.JP_GOLF_GEMINI_MODEL || 'gemini-2.5-flash-lite';
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_TOTAL_LENGTH = 12000;
 const MAX_OUTPUT_TOKENS = 512;
-
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_MAX_KEYS = 1000;
@@ -27,9 +22,7 @@ globalThis.__jpGolfRateLimit = rateLimitStore;
 
 function getClientIp(req) {
   const forwarded = req.headers?.['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.trim()) {
-    return forwarded.split(',')[0].trim();
-  }
+  if (typeof forwarded === 'string' && forwarded.trim()) return forwarded.split(',')[0].trim();
   return req.socket?.remoteAddress || 'unknown';
 }
 
@@ -53,7 +46,6 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method Not Allowed' });
     return;
   }
-
   if (isRateLimited(getClientIp(req))) {
     res.setHeader('Retry-After', String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)));
     res.status(429).json({ error: 'Too many requests' });
@@ -61,27 +53,24 @@ export default async function handler(req, res) {
   }
 
   let body = {};
-  if (req.body && typeof req.body === 'object') {
-    body = req.body;
-  } else if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
+  if (req.body && typeof req.body === 'object') body = req.body;
+  else if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
     try { body = JSON.parse(req.body.toString()); } catch { body = {}; }
   } else {
-    const raw = await new Promise((resolve) => {
+    const raw = await new Promise(resolve => {
       const chunks = [];
-      req.on('data', c => chunks.push(c));
+      req.on('data', chunk => chunks.push(chunk));
       req.on('end', () => resolve(Buffer.concat(chunks).toString()));
     });
     try { body = JSON.parse(raw); } catch { body = {}; }
   }
 
   const { messages } = body;
-
   if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) {
     res.status(400).json({ error: 'messages array required' });
     return;
   }
 
-  // MVP 무료 검증 단계: 전 모드 Gemini 2.5 Flash-Lite 무료 티어 사용.
   const normalizedMessages = [];
   let totalLength = 0;
   for (const message of messages) {
@@ -101,7 +90,7 @@ export default async function handler(req, res) {
     }
     normalizedMessages.push({ role: message.role, content });
   }
-  // 결제 연동(가이드모드) 완료 후 Claude Haiku 4.5 유료 전환 예정 — ObsidianVault/03_Projects/jp-golf/2026-07-04-ai-api-stack.md 참조.
+
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) {
     res.status(500).json({ error: 'API key not configured' });
@@ -116,21 +105,19 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
         generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
-        contents: normalizedMessages.map(m => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }],
+        contents: normalizedMessages.map(message => ({
+          role: message.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: message.content }],
         })),
       }),
-    }
+    },
   );
 
   if (!geminiRes.ok) {
     res.status(502).json({ error: 'Upstream API error' });
     return;
   }
-
   const data = await geminiRes.json();
-  const content = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '죄송해요, 잠시 오류가 발생했어요.';
-
+  const content = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '잠시 후 다시 시도해 주세요.';
   res.status(200).json({ content });
 }
