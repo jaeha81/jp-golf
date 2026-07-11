@@ -9,7 +9,7 @@ const SYSTEM_PROMPT = `당신은 일본 골프 예약을 돕는 한국어 상담
 - 답변은 자연스러운 한국어로 짧고 명확하게 작성하세요.
 - 결제, 예약 확정, 실시간 가격·재고를 보장하지 마세요.`;
 
-const FREE_MODEL = process.env.JP_GOLF_GEMINI_MODEL || 'gemini-2.5-flash-lite';
+const FREE_MODEL = process.env.JP_GOLF_GEMINI_MODEL || 'gemini-3.5-flash';
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_TOTAL_LENGTH = 12000;
@@ -97,18 +97,19 @@ export default async function handler(req, res) {
     return;
   }
 
+  const input = normalizedMessages
+    .map(message => `${message.role === 'assistant' ? '상담 AI' : '사용자'}: ${message.content}`)
+    .join('\n');
   const geminiRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${FREE_MODEL}:generateContent`,
+    'https://generativelanguage.googleapis.com/v1beta/interactions',
     {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
-        contents: normalizedMessages.map(message => ({
-          role: message.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: message.content }],
-        })),
+        model: FREE_MODEL,
+        system_instruction: SYSTEM_PROMPT,
+        input,
+        generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
       }),
     },
   );
@@ -118,6 +119,13 @@ export default async function handler(req, res) {
     return;
   }
   const data = await geminiRes.json();
-  const content = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '잠시 후 다시 시도해 주세요.';
+  const output = data?.steps?.find(step => step?.type === 'model_output')?.content;
+  const content = Array.isArray(output)
+    ? output.map(part => part?.text || '').join('').trim()
+    : (typeof output === 'string' ? output : '');
+  if (!content) {
+    res.status(502).json({ error: 'Empty upstream response' });
+    return;
+  }
   res.status(200).json({ content });
 }

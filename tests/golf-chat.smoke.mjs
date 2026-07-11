@@ -9,7 +9,7 @@ let calls = [];
 const fetchMock = async (url, options) => {
   calls.push({ url, options });
   if (fetchMode === 'error') return { ok: false, text: async () => 'secret upstream body' };
-  return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }) };
+  return { ok: true, json: async () => ({ steps: [{ type: 'model_output', content: [{ type: 'text', text: 'ok' }] }] }) };
 };
 
 const factory = new Function('process', 'fetch', 'Buffer', `${source}\nreturn handler;`);
@@ -44,7 +44,7 @@ await handler({ method: 'POST', body: { messages: [{ role: 'user', content: '안
 assert.equal(res.statusCode, 200);
 assert.equal(calls[0].url.includes('?key='), false);
 assert.equal(calls[0].options.headers['x-goog-api-key'], 'test-key');
-assert.equal(calls[0].options.body.includes('maxOutputTokens'), true);
+assert.equal(calls[0].options.body.includes('max_output_tokens'), true);
 
 fetchMode = 'error';
 res = response();
