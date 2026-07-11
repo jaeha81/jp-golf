@@ -9,8 +9,12 @@ let fetchMode = 'ok';
 let calls = [];
 const fetchMock = async (url, options) => {
   calls.push({ url, options });
+  if (fetchMode === 'throw') throw new Error('network failure');
   if (fetchMode === 'error') {
     return { ok: false, status: 400, text: async () => 'private upstream error' };
+  }
+  if (fetchMode === 'bad-json') {
+    return { ok: true, json: async () => { throw new Error('invalid json'); } };
   }
   if (fetchMode === 'empty') {
     return { ok: true, json: async () => ({ steps: [{ type: 'model_output', content: [] }] }) };
@@ -118,6 +122,26 @@ await handler({
 }, res);
 assert.equal(res.statusCode, 502);
 
+fetchMode = 'throw';
+res = response();
+await handler({
+  method: 'POST',
+  body: { messages: [{ role: 'user', content: '네트워크 예외 테스트' }] },
+  headers: { 'x-forwarded-for': '2.2.2.4' },
+  socket: {},
+}, res);
+assert.equal(res.statusCode, 502);
+
+fetchMode = 'bad-json';
+res = response();
+await handler({
+  method: 'POST',
+  body: { messages: [{ role: 'user', content: '비JSON 응답 테스트' }] },
+  headers: { 'x-forwarded-for': '2.2.2.5' },
+  socket: {},
+}, res);
+assert.equal(res.statusCode, 502);
+
 fetchMode = 'ok';
 for (let i = 0; i < 20; i += 1) {
   res = response();
@@ -137,5 +161,21 @@ await handler({
   socket: {},
 }, res);
 assert.equal(res.statusCode, 429);
+
+calls = [];
+const fallbackHandler = factory(
+  { env: { GOOGLE_API_KEY: ' AQ.fallback-key ' } },
+  fetchMock,
+  Buffer,
+);
+res = response();
+await fallbackHandler({
+  method: 'POST',
+  body: { messages: [{ role: 'user', content: '대체 키 테스트' }] },
+  headers: { 'x-forwarded-for': '4.4.4.4' },
+  socket: {},
+}, res);
+assert.equal(res.statusCode, 200);
+assert.equal(calls[0].options.headers['x-goog-api-key'], 'AQ.fallback-key');
 
 console.log('JP Golf API smoke tests passed');

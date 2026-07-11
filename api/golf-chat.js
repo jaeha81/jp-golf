@@ -106,27 +106,41 @@ export default async function handler(req, res) {
     type: message.role === 'assistant' ? 'model_output' : 'user_input',
     content: [{ type: 'text', text: message.content }],
   }));
-  const geminiRes = await fetch(
-    'https://generativelanguage.googleapis.com/v1/interactions',
-    {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        model: FREE_MODEL.startsWith('models/') ? FREE_MODEL : `models/${FREE_MODEL}`,
-        system_instruction: SYSTEM_PROMPT,
-        input,
-        store: false,
-        generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
-      }),
-    },
-  );
+  let geminiRes;
+  try {
+    geminiRes = await fetch(
+      'https://generativelanguage.googleapis.com/v1/interactions',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          model: FREE_MODEL.startsWith('models/') ? FREE_MODEL : `models/${FREE_MODEL}`,
+          system_instruction: SYSTEM_PROMPT,
+          input,
+          store: false,
+          generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
+        }),
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+  } catch {
+    res.status(502).json({ error: 'Upstream API error' });
+    return;
+  }
 
   if (!geminiRes.ok) {
     res.status(502).json({ error: 'Upstream API error' });
     return;
   }
-  const data = await geminiRes.json();
-  const modelOutput = data?.steps?.filter(step => step?.type === 'model_output').at(-1);
+  let data;
+  try {
+    data = await geminiRes.json();
+  } catch {
+    res.status(502).json({ error: 'Upstream API error' });
+    return;
+  }
+  const steps = Array.isArray(data?.steps) ? data.steps : [];
+  const modelOutput = steps.filter(step => step?.type === 'model_output').at(-1);
   const content = Array.isArray(modelOutput?.content)
     ? modelOutput.content
       .filter(part => part?.type === 'text' && typeof part.text === 'string')
