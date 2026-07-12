@@ -524,6 +524,8 @@
     gap: 8px;
     align-items: end;
   }
+  #requestForm { display: none; }
+  #requestForm.is-visible { display: grid; animation: msgIn .35s ease-out; }
   .booking-field { min-width: 0; }
   .booking-field label {
     display: block;
@@ -1502,6 +1504,7 @@
       return;
     }
     applyBookingFields.disabled = true;
+    document.getElementById('requestForm').classList.add('is-visible');
     handleUserInput(parts.join(' '));
     window.setTimeout(() => { applyBookingFields.disabled = false; }, 500);
   }
