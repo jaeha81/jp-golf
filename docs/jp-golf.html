@@ -1448,6 +1448,14 @@
         <div class="course-price">¥${course.price.toLocaleString()}<small>/인</small></div>
       </div>
     `;
+    const officialLinks = {
+      'Narita Golf Club': 'https://reserve.accordiagolf.com/en/global/golfcourse/chiba/narita/',
+      'Osaka Golf Club': 'https://www.nankaiosaka-golf.co.jp/facility.html',
+      'Kyoto Golf Club': 'https://www.japan.travel/en/sports/golf/courses/kyoto-golf-club/',
+      'Kanehide Kise Country Club': 'https://www.kise-cc.jp/en/',
+      'Emerald Coast Golf Links': 'https://www.emeraldcoast.jp/'
+    };
+    if (officialLinks[course.name]) el.insertAdjacentHTML('beforeend', `<a class="redirect-btn" href="${officialLinks[course.name]}" target="_blank" rel="noopener sponsored">공식 페이지·시설 보기 →</a>`);
     el.addEventListener('click', () => {
       document.querySelectorAll('.course-result').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
@@ -1487,6 +1495,14 @@
     { name: '하코네 긴란 골프클럽', jp: '箱根銀蘭GC', region: '하코네', time: '8:20 / 9:00 가능', price: 28500 },
     { name: '나리타 노스 컨트리클럽', jp: '成田ノースCC', region: '나리타 인근', time: '7:30 / 8:10 가능', price: 16800 }
   ];
+
+  courses.splice(0, courses.length,
+    { name: 'Narita Golf Club', jp: 'Narita Golf Club', region: '지바·나리타', time: '공식 페이지에서 일정·요금 확인', price: 0, tag: '도쿄 근교' },
+    { name: 'Osaka Golf Club', jp: '大阪ゴルフクラブ', region: '오사카·간사이', time: '공식 페이지에서 일정·요금 확인', price: 0 },
+    { name: 'Kyoto Golf Club', jp: '京都ゴルフ倶楽部', region: '교토', time: '공식 페이지에서 일정·요금 확인', price: 0 },
+    { name: 'Kanehide Kise Country Club', jp: 'Kanehide Kise Country Club', region: '오키나와', time: '공식 페이지에서 일정·요금 확인', price: 0, tag: '오키나와' },
+    { name: 'Emerald Coast Golf Links', jp: 'エメラルドコーストG.L.', region: '미야코지마', time: '공식 페이지에서 일정·요금 확인', price: 0 }
+  );
 
   function formatDate(value) {
     if (!value) return '';
