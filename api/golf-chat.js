@@ -9,6 +9,10 @@ const SYSTEM_PROMPT = `당신은 일본 골프 예약을 돕는 한국어 상담
 - 답변은 자연스러운 한국어로 짧고 명확하게 작성하세요.
 - 결제, 예약 확정, 실시간 가격·재고를 보장하지 마세요.`;
 
+const CONSULTATION_FLOW = `
+상담 진행 규칙: 먼저 지역, 총 인원, 여행 날짜와 숙박 박수를 차례로 확인한다. 다음 라운딩 횟수·희망 라운딩 날짜·1인 예산·티오프 시간대를 확인한다. 비행기 발권 여부를 묻고, 미발권이면 출발 공항과 항공편 시간에 따라 첫날·마지막날 라운딩 가능 여부를 나눠 안내한다. 발권했으면 항공편명과 도착·출발 시각을 받아 라운딩 날짜를 맞춘다. 골프장 선호(명문·가성비·리조트·바다 전망·온천), 셀프/캐디, 카트·식사·2인 추가요금 여부도 확인한다. 충분히 모이면 날짜·지역·인원·라운딩 날짜·횟수·예산·항공권 상태를 요약해 고객 확인을 받고, 고객이 알아봐 달라고 하면 [[SHOW_COURSES]]를 붙인다. 질문은 한 번에 하나씩 짧게 하고 예약·가격·재고는 공식 페이지 확인 전 보장하지 않는다.
+`;
+
 const FREE_MODEL = process.env.JP_GOLF_GEMINI_MODEL || 'gemini-3.5-flash';
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 2000;
@@ -115,7 +119,7 @@ export default async function handler(req, res) {
         headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           model: FREE_MODEL.startsWith('models/') ? FREE_MODEL : `models/${FREE_MODEL}`,
-          system_instruction: SYSTEM_PROMPT,
+          system_instruction: `${SYSTEM_PROMPT}\n${CONSULTATION_FLOW}`,
           input,
           store: false,
           generation_config: {
