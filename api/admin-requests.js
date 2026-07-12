@@ -30,8 +30,9 @@ function clean(value, max = MAX_TEXT) {
 }
 
 export default async function handler(req, res) {
+  if (req.method !== 'POST' && !adminAuthorized(req)) return json(res, 401, { error: '관리자 비밀번호가 올바르지 않습니다.' });
   const sql = database();
-  if (!sql) return json(res, 503, { error: '관리자 의뢰 큐가 아직 설정되지 않았습니다.' });
+  if (!sql) return json(res, 503, { error: '비밀번호는 확인됐지만 관리자 의뢰 저장소가 아직 연결되지 않았습니다.' });
 
   try {
     await sql`CREATE TABLE IF NOT EXISTS customer_requests (
@@ -65,7 +66,6 @@ export default async function handler(req, res) {
       return json(res, 201, { request: result[0] });
     }
 
-    if (!adminAuthorized(req)) return json(res, 401, { error: '관리자 인증이 필요합니다.' });
     if (req.method === 'GET') {
       const rows = await sql`SELECT id, name, contact, golf_date, players, budget_per_person, request, status, created_at, updated_at
         FROM customer_requests ORDER BY id ASC LIMIT 200`;
