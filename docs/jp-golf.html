@@ -38,6 +38,7 @@
     line-height: 1.65;
     -webkit-font-smoothing: antialiased;
     font-feature-settings: 'tnum' 1, 'palt' 1;
+    overflow-x: hidden;
   }
   a { color: inherit; text-decoration: none; }
   button { font: inherit; cursor: pointer; border: none; background: none; }
@@ -942,8 +943,25 @@
     .footer-inner { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 560px) {
-    .nav-links { gap: 16px; }
-    .nav-links a:not(.nav-cta) { display: none; }
+    .nav-inner { padding: 12px 14px; }
+    .nav-links { gap: 7px; }
+    .nav-links a:not(.nav-cta):not(.nav-admin) { display: none; }
+    .nav-cta { padding: 8px 11px; font-size: 0.72rem; }
+    .nav-admin { display: inline-flex; padding: 8px 5px; font-size: 0.72rem !important; }
+    .hero { padding: 32px 14px 24px; gap: 24px; }
+    .hero h1 { font-size: clamp(2rem, 10vw, 2.8rem); }
+    .hero h1 em { white-space: normal; }
+    .hero-sub { font-size: 0.92rem; }
+    .chat-widget { height: min(720px, calc(100dvh - 110px)); min-height: 560px; border-radius: 16px; }
+    .chat-header { padding: 14px; }
+    .chat-body { padding: 16px 12px; gap: 10px; }
+    .msg { max-width: 94%; padding: 10px 12px; font-size: 0.84rem; overflow-wrap: anywhere; }
+    .booking-fields { grid-template-columns: 1fr; padding: 10px 12px; gap: 7px; }
+    .booking-field:nth-child(3), .booking-apply { grid-column: 1 / -1; }
+    .booking-fields textarea { width: 100%; }
+    .booking-apply { width: 100%; min-height: 42px; }
+    .chat-input { padding: 10px 12px; gap: 8px; }
+    .chat-input input { min-width: 0; }
     .hero-stats { flex-wrap: wrap; gap: 20px; }
     .trust-inner { grid-template-columns: 1fr; }
     .footer-inner { grid-template-columns: 1fr; }
