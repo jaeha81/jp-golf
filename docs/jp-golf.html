@@ -774,6 +774,11 @@
     align-items: baseline;
     justify-content: space-between;
   }
+  .course-tools { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 auto 12px; max-width:1180px; padding:0 28px; }
+  .course-tools label { color:var(--gray); font-size:.8rem; }
+  .course-tools select { margin-left:5px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; background:var(--white); }
+  .course-tools a { margin-left:auto; color:var(--green); font-weight:700; font-size:.82rem; }
+  .course-source-note { max-width:1180px; margin:0 auto 20px; padding:0 28px; color:var(--gray); font-size:.8rem; }
   .course-price-yen {
     font-size: 1.06rem;
     font-weight: 800;
@@ -947,6 +952,11 @@
     .footer-inner { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 560px) {
+    .course-tools { padding:0 14px; align-items:stretch; }
+    .course-tools label { flex:1 1 45%; }
+    .course-tools select { width:100%; margin:4px 0 0; }
+    .course-tools a { flex-basis:100%; margin-left:0; }
+    .course-source-note { padding:0 14px; }
     .nav-inner { padding: 12px 14px; }
     .nav-links { gap: 7px; }
     .nav-links a:not(.nav-cta):not(.nav-admin) { display: none; }
@@ -1159,6 +1169,12 @@
   <p class="section-lead">
     도쿄 근교부터 오사카·후쿠오카까지. 현재 베타에서 사용하는 예시 코스이며 실제 조건은 공식 예약 페이지에서 확인해야 합니다.
   </p>
+  <div class="course-tools" aria-label="라쿠텐 고라 검색 안내">
+    <label>지역 <select id="regionGuide"><option>전체</option><option>지바·나리타</option><option>오사카</option><option>교토</option><option>오키나와</option></select></label>
+    <label>예산 <select id="budgetGuide"><option>제한 없음</option><option>1만엔대</option><option>2만엔대</option><option>3만엔 이상</option></select></label>
+    <a href="https://gora.golf.rakuten.co.jp/" target="_blank" rel="noopener sponsored">라쿠텐 GORA에서 실시간 검색 →</a>
+  </div>
+  <p class="course-source-note">아래는 상담용 대표 코스 예시입니다. 실시간 빈자리·총액·플레이 스타일(2인 보장, 숙박, 식사, 카트 등)은 라쿠텐 GORA 또는 각 골프장 공식 페이지에서 최종 확인하세요.</p>
   <div class="course-grid">
     <article class="course-card">
       <div class="course-img">
