@@ -1456,10 +1456,10 @@
   let selectedCourse = null;
   const GOLF_API_URL = '/api/golf-chat';
   const QUICK_REGION_RESPONSES = {
-    '도쿄 근교': '도쿄 근교로 안내드릴게요. 함께 라운드하실 총 인원은 몇 분인가요?',
-    '오사카 · 교토': '오사카·교토 지역으로 안내드릴게요. 함께 라운드하실 총 인원은 몇 분인가요?',
-    '후쿠오카': '후쿠오카 지역으로 안내드릴게요. 함께 라운드하실 총 인원은 몇 분인가요?',
-    '하코네 · 후지': '하코네·후지 지역으로 안내드릴게요. 함께 라운드하실 총 인원은 몇 분인가요?'
+    '도쿄 근교': '도쿄 근교로 안내드릴게요. 아래 입력란에서 희망 날짜·플레이 인원·1인당 예산을 입력한 뒤 “상담에 반영”을 눌러주세요.',
+    '오사카 · 교토': '오사카·교토 지역으로 안내드릴게요. 아래 입력란에서 희망 날짜·플레이 인원·1인당 예산을 입력한 뒤 “상담에 반영”을 눌러주세요.',
+    '후쿠오카': '후쿠오카 지역으로 안내드릴게요. 아래 입력란에서 희망 날짜·플레이 인원·1인당 예산을 입력한 뒤 “상담에 반영”을 눌러주세요.',
+    '하코네 · 후지': '하코네·후지 지역으로 안내드릴게요. 아래 입력란에서 희망 날짜·플레이 인원·1인당 예산을 입력한 뒤 “상담에 반영”을 눌러주세요.'
   };
 
   function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -1644,8 +1644,18 @@
 
     const quickResponse = QUICK_REGION_RESPONSES[text];
     if (quickResponse) {
-      aiSay(quickResponse, ['1명', '2명', '3명', '4명'], { fast: true });
+      aiSay(quickResponse, null, { fast: true });
       chatMessages.push({ role: 'assistant', content: quickResponse });
+      return;
+    }
+
+    const playersMatch = text.match(/^([1-7])명$|^8명\s*이상$/);
+    if (playersMatch) {
+      const players = text.startsWith('8') ? '8' : playersMatch[1];
+      golfPlayers.value = players;
+      const response = `플레이 인원을 ${players === '8' ? '8명 이상' : `${players}명`}으로 반영했습니다. 아래 입력란에서 날짜와 예산도 입력한 뒤 “상담에 반영”을 눌러주세요.`;
+      aiSay(response, null, { fast: true });
+      chatMessages.push({ role: 'assistant', content: response });
       return;
     }
 
