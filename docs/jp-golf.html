@@ -1395,6 +1395,12 @@
   let chatMessages = [];
   let selectedCourse = null;
   const GOLF_API_URL = '/api/golf-chat';
+  const QUICK_REGION_RESPONSES = {
+    '도쿄 근교': '도쿄 근교로 안내드릴게요. 함께 라운드하실 총 인원은 몇 분인가요?',
+    '오사카 · 교토': '오사카·교토 지역으로 안내드릴게요. 함께 라운드하실 총 인원은 몇 분인가요?',
+    '후쿠오카': '후쿠오카 지역으로 안내드릴게요. 함께 라운드하실 총 인원은 몇 분인가요?',
+    '하코네 · 후지': '하코네·후지 지역으로 안내드릴게요. 함께 라운드하실 총 인원은 몇 분인가요?'
+  };
 
   function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -1575,6 +1581,13 @@
     }
 
     chatMessages.push({ role: 'user', content: text });
+
+    const quickResponse = QUICK_REGION_RESPONSES[text];
+    if (quickResponse) {
+      aiSay(quickResponse, ['1명', '2명', '3명', '4명'], { fast: true });
+      chatMessages.push({ role: 'assistant', content: quickResponse });
+      return;
+    }
 
     (async () => {
       addTyping();
