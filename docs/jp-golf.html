@@ -1048,6 +1048,15 @@
       </div>
     </div>
     <div class="chat-body" id="chatBody"></div>
+    <form class="chat-input" id="chatForm">
+      <input type="text" id="chatInput" placeholder="메시지를 입력하세요…" autocomplete="off">
+      <button type="submit" class="chat-send" aria-label="전송">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </form>
     <div class="booking-fields" aria-label="골프 상담 조건 입력">
       <div class="booking-field">
         <label for="golfDate">희망 날짜</label>
@@ -1080,15 +1089,6 @@
       <label style="grid-column: 1 / -1; font-size: .78rem"><input type="checkbox" id="requestConsent" required> 상담 처리를 위해 입력한 연락처를 이용하는 데 동의합니다.</label>
       <button type="submit" class="booking-apply" id="submitRequest">상담 의뢰 저장</button>
       <p id="requestStatus" role="status" style="grid-column: 1 / -1; font-size: .8rem"></p>
-    </form>
-    <form class="chat-input" id="chatForm">
-      <input type="text" id="chatInput" placeholder="메시지를 입력하세요…" autocomplete="off">
-      <button type="submit" class="chat-send" aria-label="전송">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-      </button>
     </form>
   </div>
 </section>
