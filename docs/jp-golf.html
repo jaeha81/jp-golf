@@ -703,6 +703,12 @@
     position: relative;
     overflow: hidden;
   }
+  .course-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
   .course-img::before {
     content: '';
     position: absolute;
@@ -746,6 +752,60 @@
     margin-bottom: 4px;
     letter-spacing: -0.3px;
   }
+  button.course-card {
+    width: 100%;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+  }
+  .course-detail-hint {
+    margin-top: 14px;
+    color: var(--green);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .course-modal[hidden] { display: none; }
+  .course-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 45, 36, 0.68);
+  }
+  .course-modal__panel {
+    width: min(860px, 100%);
+    max-height: min(760px, 92vh);
+    overflow: auto;
+    border-radius: 18px;
+    background: var(--white);
+    box-shadow: var(--shadow-md);
+    position: relative;
+  }
+  .course-modal__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.92);
+    color: var(--green-deep);
+    font-size: 1.4rem;
+  }
+  .course-modal__hero { width: 100%; height: 260px; object-fit: cover; display: block; }
+  .course-modal__body { padding: 24px; }
+  .course-modal__body h3 { color: var(--green-deep); font-size: 1.45rem; margin-bottom: 4px; }
+  .course-modal__body p { color: var(--gray); line-height: 1.65; }
+  .course-modal__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 22px 0; }
+  .course-modal__grid h4 { color: var(--green-deep); margin-bottom: 8px; }
+  .course-modal__grid ul { margin: 0; padding-left: 18px; color: var(--gray); line-height: 1.75; }
+  .course-modal__gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0 24px; }
+  .course-modal__gallery img { width: 100%; height: 110px; object-fit: cover; border-radius: 8px; }
+  @media (max-width: 600px) { .course-modal__grid { grid-template-columns: 1fr; } .course-modal__hero { height: 190px; } .course-modal__body { padding: 18px; } }
   .course-jp {
     font-size: 0.78rem;
     color: var(--gray);
@@ -1165,17 +1225,17 @@
 <!-- Popular courses -->
 <section class="block" id="courses">
   <div class="section-eyebrow">Popular Courses</div>
-  <h2 class="section-title">지역별로 살펴보는<br>일본 골프장 예시</h2>
+  <h2 class="section-title">지역별로 살펴보는<br>일본 실제 골프장</h2>
   <p class="section-lead">
-    도쿄 근교부터 오사카·후쿠오카까지. 현재 베타에서 사용하는 예시 코스이며 실제 조건은 공식 예약 페이지에서 확인해야 합니다.
+    도쿄 근교부터 오사카·오키나와까지. 공식 골프장 정보를 바탕으로 구성했으며, 카드에서 코스·시설·사진을 확인할 수 있습니다.
   </p>
   <div class="course-tools" aria-label="라쿠텐 고라 검색 안내">
     <label>지역 <select id="regionGuide"><option>전체</option><option>지바·나리타</option><option>오사카</option><option>교토</option><option>오키나와</option></select></label>
     <label>예산 <select id="budgetGuide"><option>제한 없음</option><option>1만엔대</option><option>2만엔대</option><option>3만엔 이상</option></select></label>
     <a href="https://gora.golf.rakuten.co.jp/" target="_blank" rel="noopener sponsored">라쿠텐 GORA에서 실시간 검색 →</a>
   </div>
-  <p class="course-source-note">아래는 상담용 대표 코스 예시입니다. 실시간 빈자리·총액·플레이 스타일(2인 보장, 숙박, 식사, 카트 등)은 라쿠텐 GORA 또는 각 골프장 공식 페이지에서 최종 확인하세요.</p>
-  <div class="course-grid">
+  <p class="course-source-note">아래 정보와 사진은 각 골프장 공식 페이지를 기준으로 정리했습니다. 실시간 빈자리·요금·플레이 조건은 반드시 해당 골프장 공식 페이지에서 최종 확인하세요.</p>
+  <div class="course-grid" id="courseGrid">
     <article class="course-card">
       <div class="course-img">
         <div class="course-region">TOKYO</div>
@@ -1669,6 +1729,98 @@
       status.textContent = error.message;
     } finally { submit.disabled = false; }
   });
+
+  const featuredCourses = [
+    {
+      id: 'narashino', region: '지바·도쿄 근교', name: '나리시노 컨트리클럽', jp: '習志野カントリークラブ',
+      summary: '킹·퀸 36홀을 갖춘 토너먼트 코스. 도심에서 철도로 접근 가능한 지바의 대표 코스입니다.',
+      holes: '36홀 · Par 144', distance: '13,590yd',
+      facilities: ['캐디·셀프 선택', 'GPS 카트', '클럽하우스', '송영 버스'],
+      images: ['https://reserve.accordiagolf.com/images/course/012/main.png', 'https://reserve.accordiagolf.com/images/golfs/012/narashino_1.jpg', 'https://reserve.accordiagolf.com/images/golfs/012/narashino_2.jpg'],
+      officialUrl: 'https://reserve.accordiagolf.com/en/global/golfcourse/chiba/narashino/'
+    },
+    {
+      id: 'naritahigashi', region: '지바·나리타', name: '나리타 히가시 컨트리클럽', jp: '成田東カントリークラブ',
+      summary: '숲과 연못을 활용한 전략적인 18홀 힐 코스. 넓은 티샷 구간과 정교한 공략이 공존합니다.',
+      holes: '18홀 · Par 72', distance: '7,107yd',
+      facilities: ['셀프 플레이', 'GPS 카트', '클럽하우스', '레스토랑'],
+      images: ['https://reserve.accordiagolf.com/images/course/066/main.png', 'https://reserve.accordiagolf.com/images/golfs/066/リサイズ写真_0001_03%20OPUS8670-r.jpg', 'https://reserve.accordiagolf.com/images/golfs/066/リサイズ写真_0000_04%20OPUS8516-r.jpg'],
+      officialUrl: 'https://reserve.accordiagolf.com/en/global/golfCourse/chiba/naritahigashi/'
+    },
+    {
+      id: 'sakai', region: '오사카', name: '사카이 컨트리클럽', jp: '堺カントリークラブ',
+      summary: '소나무·대나무·매화 3개 코스로 구성된 오사카의 27홀 힐 코스입니다.',
+      holes: '27홀 · Par 108', distance: '9,773yd',
+      facilities: ['5인승 카트', 'GPS 내비게이션', '레스토랑', '클럽하우스'],
+      images: ['https://reserve.accordiagolf.com/images/course/086/main.png', 'https://reserve.accordiagolf.com/images/golfs/086/NQ_sakai_01.jpg', 'https://reserve.accordiagolf.com/images/golfs/086/NQ_sakai_02.jpg'],
+      officialUrl: 'https://reserve.accordiagolf.com/en/global/golfCourse/osaka/sakai/'
+    },
+    {
+      id: 'izumisano', region: '오사카·간사이공항', name: '이즈미사노 컨트리클럽', jp: '泉佐野カントリークラブ',
+      summary: '이누나키·이나쿠라·오사카만 3개 코스가 이어지는 27홀 코스입니다.',
+      holes: '27홀 · Par 108', distance: '9,384yd',
+      facilities: ['어프로치·퍼팅 연습장', 'GPS 카트', '렌탈 클럽', '샤워 시설'],
+      images: ['https://reserve.accordiagolf.com/images/course/047/main.png', 'https://reserve.accordiagolf.com/images/golfs/047/犬鳴1.jpg', 'https://reserve.accordiagolf.com/images/golfs/047/大阪湾1.jpg'],
+      officialUrl: 'https://reserve.accordiagolf.com/golfCourse/osaka/izumisano/detail'
+    },
+    {
+      id: 'okinawa', region: '오키나와', name: '오키나와 컨트리클럽', jp: '沖縄カントリークラブ',
+      summary: '나하시내에서 차로 약 20분. 태평양을 내려다보는 18홀 힐 코스입니다.',
+      holes: '18홀 · Par 70', distance: '5,764yd',
+      facilities: ['연습 타석 4개', 'GPS 카트', '레스토랑', '욕장'],
+      images: ['https://reserve.accordiagolf.com/images/course/373/main.png', 'https://reserve.accordiagolf.com/images/golfs/373/9-3.jpg', 'https://reserve.accordiagolf.com/images/golfs/373/13-2.jpg'],
+      officialUrl: 'https://reserve.accordiagolf.com/en/global/golfcourse/okinawa/okinawa/'
+    },
+    {
+      id: 'southernlinks', region: '오키나와·난조', name: '더 서던 링크스 골프클럽', jp: 'ザ・サザンリンクスゴルフクラブ',
+      summary: '태평양 해안 절경과 바다를 넘기는 홀을 즐길 수 있는 오키나와 링크스 코스입니다.',
+      holes: '18홀', distance: '오션뷰 링크스',
+      facilities: ['10타석 드라이빙 레인지', '어프로치·벙커 연습장', '대욕장', '오션뷰 호텔'],
+      images: ['https://www.accordiagolf.com/grand/southernlinks/assets/img/facility/facility_ph00.jpg', 'https://www.accordiagolf.com/grand/southernlinks/assets/img/facility/facility_ph01.jpg', 'https://www.accordiagolf.com/grand/southernlinks/assets/img/facility/facility_ph02.jpg'],
+      officialUrl: 'https://www.accordiagolf.com/grand/southernlinks/facility.php'
+    }
+  ];
+
+  function renderFeaturedCourses() {
+    const grid = document.getElementById('courseGrid');
+    if (!grid) return;
+    grid.innerHTML = featuredCourses.map(course => `
+      <button type="button" class="course-card" data-course-id="${course.id}" aria-label="${course.name} 상세 보기">
+        <div class="course-img"><img src="${course.images[0]}" alt="${course.name} 코스 전경" loading="lazy"><div class="course-region">${course.region}</div></div>
+        <div class="course-body"><h4>${course.name}</h4><div class="course-jp">${course.jp}</div>
+          <div class="course-feats"><span>${course.holes}</span><span>${course.distance}</span></div>
+          <div class="course-detail-hint">사진·시설·코스 정보 보기 →</div>
+        </div>
+      </button>`).join('');
+    grid.addEventListener('click', event => {
+      const card = event.target.closest('[data-course-id]');
+      if (!card) return;
+      openCourseDetail(featuredCourses.find(course => course.id === card.dataset.courseId));
+    });
+  }
+
+  function openCourseDetail(course) {
+    if (!course) return;
+    let modal = document.getElementById('courseDetailModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'courseDetailModal';
+      modal.className = 'course-modal';
+      modal.addEventListener('click', event => { if (event.target === modal || event.target.closest('[data-close-course-modal]')) modal.hidden = true; });
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML = `<div class="course-modal__panel" role="dialog" aria-modal="true" aria-label="${course.name} 상세 정보">
+      <button type="button" class="course-modal__close" data-close-course-modal aria-label="닫기">×</button>
+      <img class="course-modal__hero" src="${course.images[0]}" alt="${course.name} 전경">
+      <div class="course-modal__body"><h3>${course.name}</h3><p>${course.jp} · ${course.region}</p><p>${course.summary}</p>
+        <div class="course-modal__grid"><div><h4>코스 정보</h4><ul><li>${course.holes}</li><li>${course.distance}</li></ul></div><div><h4>주요 시설</h4><ul>${course.facilities.map(item => `<li>${item}</li>`).join('')}</ul></div></div>
+        <div class="course-modal__gallery">${course.images.map((image, index) => `<img src="${image}" alt="${course.name} 사진 ${index + 1}" loading="lazy">`).join('')}</div>
+        <a class="redirect-btn" href="${course.officialUrl}" target="_blank" rel="noopener sponsored">공식 페이지에서 예약·최신 요금 확인 →</a>
+      </div></div>`;
+    modal.hidden = false;
+  }
+
+  renderFeaturedCourses();
 
   // FAQ toggle
   document.querySelectorAll('.faq-item').forEach(item => {
