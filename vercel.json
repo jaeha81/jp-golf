@@ -18,6 +18,10 @@
   ],
   "rewrites": [
     {
+      "source": "/assets/:path*",
+      "destination": "/docs/assets/:path*"
+    },
+    {
       "source": "/admin",
       "destination": "/docs/admin.html"
     },
