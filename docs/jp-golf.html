@@ -592,6 +592,14 @@
     font-weight: 700;
     margin: 0 0 4px 6px;
   }
+  .booking-field small {
+    display: block;
+    min-height: 1.1em;
+    margin: 3px 0 0 6px;
+    color: var(--green-soft);
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
   .booking-field input,
   .booking-field select {
     width: 100%;
@@ -1206,19 +1214,9 @@
         <input type="date" id="golfDate" aria-label="희망 라운딩 날짜">
       </div>
       <div class="booking-field">
-        <label for="golfNights">숙박 기간</label>
-        <select id="golfNights" aria-label="숙박 기간">
-          <option value="">숙박 선택</option>
-          <option value="0">당일</option>
-          <option value="1">1박</option>
-          <option value="2">2박</option>
-          <option value="3">3박</option>
-          <option value="4">4박</option>
-          <option value="5">5박</option>
-          <option value="6">6박</option>
-          <option value="7">7박</option>
-          <option value="8">8박 이상</option>
-        </select>
+        <label for="golfEndDate">귀국 날짜</label>
+        <input type="date" id="golfEndDate" aria-label="귀국 날짜">
+        <small id="stayLengthHint" aria-live="polite"></small>
       </div>
       <div class="booking-field">
         <label for="golfPlayers">플레이 인원</label>
@@ -1532,7 +1530,8 @@
   const form = document.getElementById('chatForm');
   const input = document.getElementById('chatInput');
   const golfDate = document.getElementById('golfDate');
-  const golfNights = document.getElementById('golfNights');
+  const golfEndDate = document.getElementById('golfEndDate');
+  const stayLengthHint = document.getElementById('stayLengthHint');
   const golfPlayers = document.getElementById('golfPlayers');
   const golfBudget = document.getElementById('golfBudget');
   const applyBookingFields = document.getElementById('applyBookingFields');
@@ -1703,14 +1702,34 @@
     return `${year}년 ${Number(month)}월 ${Number(day)}일`;
   }
 
+  function stayNightsFromDates() {
+    if (!golfDate.value || !golfEndDate.value) return null;
+    const start = new Date(`${golfDate.value}T00:00:00Z`);
+    const end = new Date(`${golfEndDate.value}T00:00:00Z`);
+    const nights = Math.round((end - start) / 86_400_000);
+    return Number.isInteger(nights) && nights >= 0 ? nights : null;
+  }
+
+  function updateStayLength() {
+    golfEndDate.min = golfDate.value || '';
+    const nights = stayNightsFromDates();
+    if (nights === null) {
+      stayLengthHint.textContent = golfEndDate.value ? '귀국 날짜는 출발 날짜 이후로 선택해 주세요.' : '';
+      return;
+    }
+    stayLengthHint.textContent = nights === 0 ? '당일 일정' : `${nights}박 ${nights + 1}일 일정`;
+  }
+
   function applySelectedConditions() {
     const parts = [];
     if (golfDate.value) parts.push(`희망 날짜는 ${formatDate(golfDate.value)}입니다.`);
-    if (golfNights.value) parts.push(`숙박 기간은 ${golfNights.value === '0' ? '당일' : golfNights.value === '8' ? '8박 이상' : `${golfNights.value}박`}입니다.`);
+    if (golfEndDate.value) parts.push(`귀국 날짜는 ${formatDate(golfEndDate.value)}입니다.`);
+    const stayNights = stayNightsFromDates();
+    if (stayNights !== null) parts.push(`여행 기간은 ${stayNights === 0 ? '당일' : `${stayNights}박 ${stayNights + 1}일`}입니다.`);
     if (golfPlayers.value) parts.push(`플레이 인원은 ${golfPlayers.value === '8' ? '8명 이상' : `${golfPlayers.value}명`}입니다.`);
     if (golfBudget.value) parts.push(`1인당 선호 예산은 ${Number(golfBudget.value).toLocaleString('ko-KR')}원입니다.`);
     if (!parts.length) {
-      addMsg('ai', '날짜, 숙박 기간, 인원, 예산 중 하나 이상을 선택해 주세요.');
+      addMsg('ai', '출발 날짜, 귀국 날짜, 인원, 예산 중 하나 이상을 선택해 주세요.');
       return;
     }
     applyBookingFields.disabled = true;
@@ -1829,6 +1848,8 @@
     handleUserInput(text);
   });
   input.addEventListener('input', clearIdleConsultationTimer);
+  golfDate.addEventListener('change', updateStayLength);
+  golfEndDate.addEventListener('change', updateStayLength);
   applyBookingFields.addEventListener('click', applySelectedConditions);
   document.getElementById('requestForm').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -1843,7 +1864,8 @@
           name: document.getElementById('requestName').value,
           contact: document.getElementById('requestContact').value,
           golfDate: document.getElementById('golfDate').value,
-          stayNights: document.getElementById('golfNights').value,
+          stayEndDate: document.getElementById('golfEndDate').value,
+          stayNights: stayNightsFromDates(),
           players: document.getElementById('golfPlayers').value,
           budgetPerPerson: document.getElementById('golfBudget').value,
           request: document.getElementById('requestNote').value

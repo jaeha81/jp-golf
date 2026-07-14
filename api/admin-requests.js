@@ -40,6 +40,7 @@ export default async function handler(req, res) {
       name TEXT NOT NULL,
       contact TEXT NOT NULL,
       golf_date DATE,
+      stay_end_date DATE,
       stay_nights INTEGER,
       players INTEGER,
       budget_per_person INTEGER,
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`;
     await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS stay_nights INTEGER`;
+    await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS stay_end_date DATE`;
     await sql`CREATE INDEX IF NOT EXISTS customer_requests_status_created_idx ON customer_requests (status, created_at)`;
 
     if (req.method === 'POST') {
@@ -62,16 +64,18 @@ export default async function handler(req, res) {
       const budget = Number(body?.budgetPerPerson);
       if (!name || !contact || !request) return json(res, 400, { error: '이름, 연락처, 의뢰 내용을 입력해 주세요.' });
       if (body?.golfDate && !/^\d{4}-\d{2}-\d{2}$/.test(body.golfDate)) return json(res, 400, { error: '날짜 형식이 올바르지 않습니다.' });
+      if (body?.stayEndDate && !/^\d{4}-\d{2}-\d{2}$/.test(body.stayEndDate)) return json(res, 400, { error: '귀국 날짜 형식이 올바르지 않습니다.' });
+      if (body?.golfDate && body?.stayEndDate && body.stayEndDate < body.golfDate) return json(res, 400, { error: '귀국 날짜는 출발 날짜 이후여야 합니다.' });
       if (body?.stayNights !== '' && body?.stayNights != null && (!Number.isInteger(stayNights) || stayNights < 0 || stayNights > 30)) return json(res, 400, { error: '숙박 기간이 올바르지 않습니다.' });
       if (body?.players && (!Number.isInteger(players) || players < 1 || players > 20)) return json(res, 400, { error: '인원 수가 올바르지 않습니다.' });
-      const result = await sql`INSERT INTO customer_requests (name, contact, golf_date, stay_nights, players, budget_per_person, request)
-        VALUES (${name}, ${contact}, ${body.golfDate || null}, ${body?.stayNights !== '' && body?.stayNights != null ? stayNights : null}, ${body.players ? players : null}, ${body.budgetPerPerson ? budget : null}, ${request})
+      const result = await sql`INSERT INTO customer_requests (name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request)
+        VALUES (${name}, ${contact}, ${body.golfDate || null}, ${body.stayEndDate || null}, ${body?.stayNights !== '' && body?.stayNights != null ? stayNights : null}, ${body.players ? players : null}, ${body.budgetPerPerson ? budget : null}, ${request})
         RETURNING id, status, created_at`;
       return json(res, 201, { request: result[0] });
     }
 
     if (req.method === 'GET') {
-      const rows = await sql`SELECT id, name, contact, golf_date, stay_nights, players, budget_per_person, request, status, created_at, updated_at
+      const rows = await sql`SELECT id, name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, status, created_at, updated_at
         FROM customer_requests ORDER BY id ASC LIMIT 200`;
       return json(res, 200, { requests: rows });
     }
