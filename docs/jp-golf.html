@@ -23,6 +23,8 @@
     --gray-light: #b8b8b8;
     --gold: #b8893d;
     --gold-soft: #d4a957;
+    --vermilion: #b54835;
+    --indigo: #203a52;
     --border: #e6e1d6;
     --white: #ffffff;
     --radius: 14px;
@@ -34,7 +36,9 @@
   body {
     font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, sans-serif;
     color: var(--charcoal);
-    background: var(--cream);
+    background-color: var(--cream);
+    background-image: radial-gradient(circle at 10% 0%, rgba(184, 137, 61, 0.08), transparent 28%), linear-gradient(135deg, rgba(32, 58, 82, 0.025) 25%, transparent 25%);
+    background-size: auto, 18px 18px;
     line-height: 1.65;
     -webkit-font-smoothing: antialiased;
     font-feature-settings: 'tnum' 1, 'palt' 1;
@@ -48,7 +52,7 @@
     position: sticky;
     top: 0;
     z-index: 200;
-    background: #7c3aed;
+    background: var(--vermilion);
     color: #fff;
     text-align: center;
     padding: 8px 20px;
@@ -56,14 +60,14 @@
     font-weight: 600;
     letter-spacing: 0.2px;
   }
-  .beta-banner a { color: #e9d5ff; text-decoration: underline; }
+  .beta-banner a { color: #fff0d8; text-decoration: underline; }
 
   /* Nav */
   .nav {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(248, 244, 237, 0.85);
+    background: rgba(255, 253, 247, 0.88);
     backdrop-filter: saturate(180%) blur(12px);
     -webkit-backdrop-filter: saturate(180%) blur(12px);
     border-bottom: 1px solid var(--border);
@@ -88,9 +92,10 @@
   .logo-mark {
     width: 30px;
     height: 30px;
-    background: var(--green);
+    background: var(--vermilion);
     color: var(--cream);
-    border-radius: 8px;
+    border-radius: 50%;
+    border: 2px solid rgba(184, 137, 61, 0.55);
     display: grid;
     place-items: center;
     font-size: 0.7rem;
@@ -137,7 +142,7 @@
     align-items: center;
   }
   .hero:not(.chat-open) {
-    grid-template-columns: minmax(0, 620px);
+    grid-template-columns: minmax(0, 820px);
     justify-content: center;
   }
   .hero.chat-open {
@@ -145,12 +150,22 @@
     justify-content: center;
   }
   .hero.chat-open .hero-copy { display: none; }
+  .hero-copy {
+    min-height: 590px;
+    padding: 72px 64px;
+    border: 1px solid rgba(184, 137, 61, 0.32);
+    border-radius: 26px;
+    background-image: linear-gradient(90deg, rgba(255, 252, 244, 0.97) 0%, rgba(255, 252, 244, 0.9) 46%, rgba(255, 252, 244, 0.18) 78%), url('/assets/japan-golf-hero.png');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 24px 54px rgba(32, 58, 82, 0.12);
+  }
   .hero-eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--white);
-    border: 1px solid var(--border);
+    background: rgba(255, 253, 247, 0.78);
+    border: 1px solid rgba(184, 137, 61, 0.36);
     padding: 6px 14px;
     border-radius: 999px;
     font-size: 0.78rem;
@@ -205,18 +220,18 @@
     gap: 8px;
     padding: 12px 18px;
     border-radius: 999px;
-    background: var(--green-deep);
+    background: var(--vermilion);
     color: var(--cream);
     font-size: 0.88rem;
     font-weight: 700;
     box-shadow: 0 8px 18px rgba(15, 45, 36, 0.18);
   }
-  .hero-cta-btn:hover { background: var(--green); transform: translateY(-1px); }
+  .hero-cta-btn:hover { background: #963425; transform: translateY(-1px); }
   .hero-stats {
     display: flex;
     gap: 32px;
     padding-top: 28px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid rgba(184, 137, 61, 0.36);
   }
   .stat-num {
     font-size: 1.6rem;
@@ -722,7 +737,7 @@
   .course-card {
     background: var(--white);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: 4px 18px 4px 18px;
     overflow: hidden;
     transition: all 0.25s;
     display: flex;
@@ -731,7 +746,7 @@
   .course-card:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-md);
-    border-color: var(--green-soft);
+    border-color: var(--vermilion);
   }
   .course-img {
     height: 140px;
@@ -855,8 +870,8 @@
     margin-bottom: 16px;
   }
   .course-feats span {
-    background: var(--green-pale);
-    color: var(--green-deep);
+    background: #f4ead8;
+    color: var(--indigo);
     font-size: 0.72rem;
     padding: 3px 9px;
     border-radius: 5px;
@@ -1059,6 +1074,7 @@
     .nav-cta { padding: 8px 11px; font-size: 0.72rem; }
     .nav-admin { display: inline-flex; padding: 8px 5px; font-size: 0.72rem !important; }
     .hero { padding: 32px 14px 24px; gap: 24px; }
+    .hero-copy { min-height: 0; padding: 44px 26px; border-radius: 18px; background-image: linear-gradient(90deg, rgba(255, 252, 244, 0.98) 0%, rgba(255, 252, 244, 0.82) 72%, rgba(255, 252, 244, 0.34) 100%), url('/assets/japan-golf-hero.png'); }
     .hero h1 { font-size: clamp(2rem, 10vw, 2.8rem); }
     .hero h1 em { white-space: normal; }
     .hero-sub { font-size: 0.92rem; }
