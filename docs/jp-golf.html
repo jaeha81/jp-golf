@@ -229,6 +229,7 @@
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border);
     overflow: hidden;
+    scroll-margin-top: 84px;
     display: flex;
     flex-direction: column;
     height: 580px;
@@ -1850,6 +1851,13 @@
   renderFeaturedCourses();
 
   // FAQ toggle
+  document.querySelector('.hero-cta-btn')?.addEventListener('click', event => {
+    event.preventDefault();
+    const chatWidget = document.getElementById('chatWidget');
+    chatWidget?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    history.replaceState(null, '', '#chatWidget');
+  });
+
   document.querySelectorAll('.faq-item').forEach(item => {
     item.querySelector('.faq-q').addEventListener('click', () => {
       item.classList.toggle('open');
