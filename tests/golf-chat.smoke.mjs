@@ -176,6 +176,19 @@ assert.equal(res.body.source, 'fast-path');
 assert.equal(calls.length, 0);
 assert.match(res.body.content, /조건을 확인/);
 
+calls = [];
+res = response();
+await handler({
+  method: 'POST',
+  body: { messages: [{ role: 'user', content: '가고시마에서 골프 여행을 가고 싶어요.' }] },
+  headers: { 'x-forwarded-for': '2.2.2.8' },
+  socket: {},
+}, res);
+assert.equal(res.statusCode, 200);
+assert.equal(res.body.source, 'fast-path');
+assert.equal(calls.length, 0);
+assert.match(res.body.content, /인원/);
+
 fetchMode = 'ok';
 for (let i = 0; i < 20; i += 1) {
   res = response();
