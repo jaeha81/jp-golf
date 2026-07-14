@@ -572,7 +572,7 @@
     background: var(--cream);
     padding: 10px 18px 8px;
     display: grid;
-    grid-template-columns: 1.25fr 0.9fr 1.25fr auto;
+    grid-template-columns: 1.15fr 0.78fr 0.82fr 1.15fr auto;
     gap: 8px;
     align-items: end;
   }
@@ -1055,9 +1055,8 @@
       gap: 40px;
     }
     .chat-widget { height: 540px; }
-    .booking-fields { grid-template-columns: 1fr 1fr; }
-    .booking-field:nth-child(3) { grid-column: 1 / 2; }
-    .booking-apply { grid-column: 2 / 3; }
+    .booking-conditions { grid-template-columns: 1fr 1fr; }
+    .booking-conditions .booking-apply { grid-column: 1 / -1; }
     .trust-inner { grid-template-columns: repeat(2, 1fr); }
     .steps { grid-template-columns: 1fr; }
     section.block { padding: 72px 24px 24px; }
@@ -1102,7 +1101,7 @@
     .chat-body { padding: 16px 12px; gap: 10px; }
     .msg { max-width: 94%; padding: 10px 12px; font-size: 0.84rem; overflow-wrap: anywhere; }
     .booking-fields { grid-template-columns: 1fr; padding: 10px 12px; gap: 7px; }
-    .booking-field:nth-child(3), .booking-apply { grid-column: 1 / -1; }
+    .booking-conditions .booking-apply { grid-column: 1 / -1; }
     .booking-fields textarea { width: 100%; }
     .booking-apply { width: 100%; min-height: 42px; }
     .chat-input { padding: 10px 12px; gap: 8px; }
@@ -1193,10 +1192,25 @@
         </svg>
       </button>
     </form>
-    <div class="booking-fields" aria-label="골프 상담 조건 입력">
+    <div class="booking-fields booking-conditions" aria-label="골프 상담 조건 입력">
       <div class="booking-field">
         <label for="golfDate">희망 날짜</label>
         <input type="date" id="golfDate" aria-label="희망 라운딩 날짜">
+      </div>
+      <div class="booking-field">
+        <label for="golfNights">숙박 기간</label>
+        <select id="golfNights" aria-label="숙박 기간">
+          <option value="">숙박 선택</option>
+          <option value="0">당일</option>
+          <option value="1">1박</option>
+          <option value="2">2박</option>
+          <option value="3">3박</option>
+          <option value="4">4박</option>
+          <option value="5">5박</option>
+          <option value="6">6박</option>
+          <option value="7">7박</option>
+          <option value="8">8박 이상</option>
+        </select>
       </div>
       <div class="booking-field">
         <label for="golfPlayers">플레이 인원</label>
@@ -1511,6 +1525,7 @@
   const form = document.getElementById('chatForm');
   const input = document.getElementById('chatInput');
   const golfDate = document.getElementById('golfDate');
+  const golfNights = document.getElementById('golfNights');
   const golfPlayers = document.getElementById('golfPlayers');
   const golfBudget = document.getElementById('golfBudget');
   const applyBookingFields = document.getElementById('applyBookingFields');
@@ -1658,10 +1673,11 @@
   function applySelectedConditions() {
     const parts = [];
     if (golfDate.value) parts.push(`희망 날짜는 ${formatDate(golfDate.value)}입니다.`);
+    if (golfNights.value) parts.push(`숙박 기간은 ${golfNights.value === '0' ? '당일' : golfNights.value === '8' ? '8박 이상' : `${golfNights.value}박`}입니다.`);
     if (golfPlayers.value) parts.push(`플레이 인원은 ${golfPlayers.value === '8' ? '8명 이상' : `${golfPlayers.value}명`}입니다.`);
     if (golfBudget.value) parts.push(`1인당 선호 예산은 ${Number(golfBudget.value).toLocaleString('ko-KR')}원입니다.`);
     if (!parts.length) {
-      addMsg('ai', '날짜, 인원, 예산 중 하나 이상을 선택해 주세요.');
+      addMsg('ai', '날짜, 숙박 기간, 인원, 예산 중 하나 이상을 선택해 주세요.');
       return;
     }
     applyBookingFields.disabled = true;
@@ -1789,6 +1805,7 @@
           name: document.getElementById('requestName').value,
           contact: document.getElementById('requestContact').value,
           golfDate: document.getElementById('golfDate').value,
+          stayNights: document.getElementById('golfNights').value,
           players: document.getElementById('golfPlayers').value,
           budgetPerPerson: document.getElementById('golfBudget').value,
           request: document.getElementById('requestNote').value
