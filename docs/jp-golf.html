@@ -178,6 +178,31 @@
     max-width: 480px;
     line-height: 1.7;
   }
+  .hero-cta {
+    margin: 0 0 30px;
+  }
+  .hero-cta h2 {
+    color: var(--green-deep);
+    font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+    line-height: 1.3;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .hero-cta h2 em { color: var(--gold); font-style: normal; }
+  .hero-cta p { color: var(--gray); font-size: 0.9rem; line-height: 1.6; margin-bottom: 15px; }
+  .hero-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: var(--green-deep);
+    color: var(--cream);
+    font-size: 0.88rem;
+    font-weight: 700;
+    box-shadow: 0 8px 18px rgba(15, 45, 36, 0.18);
+  }
+  .hero-cta-btn:hover { background: var(--green); transform: translateY(-1px); }
   .hero-stats {
     display: flex;
     gap: 32px;
@@ -1078,6 +1103,14 @@
     <p class="hero-sub">
       지역·날짜·인원을 말씀해 주세요. AI 상담사가 상담한 내용을 바탕으로 원하시는 티타임을 찾아드립니다.
     </p>
+    <div class="hero-cta">
+      <h2>이번 일본 골프 여행,<br><em>AI랑 편하게 얘기해보세요</em></h2>
+      <p>회원가입 없이 AI 상담으로 원하는 티타임을 찾아보세요.</p>
+      <a href="#chatWidget" class="hero-cta-btn">
+        지금 상담 시작
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
     <div class="hero-stats">
       <div>
         <div class="stat-num">일본</div>
@@ -1095,7 +1128,7 @@
   </div>
 
   <!-- Chat widget -->
-  <div class="chat-widget">
+  <div class="chat-widget" id="chatWidget">
     <div class="chat-header">
       <div class="chat-avatar">JP</div>
       <div class="chat-id">
@@ -1379,18 +1412,6 @@
       <div class="faq-q">단체(8명 이상) 예약도 되나요?</div>
       <div class="faq-a">현재 단체 예약 기능은 제공하지 않습니다. 단체 예약이 필요하다면 제휴사 공식 예약 페이지에서 별도 가능 여부를 확인해 주세요.</div>
     </div>
-  </div>
-</section>
-
-<!-- Final CTA -->
-<section class="final-cta">
-  <div class="final-cta-inner">
-    <h2>이번 일본 골프 여행,<br><em>AI랑 편하게 얘기해보세요</em></h2>
-    <p>회원가입 없이, 채팅창을 열면 AI가 먼저 말을 걸어요.<br>대답해 주시면 예시 코스를 안내해 드려요.</p>
-    <a href="#chat" class="final-cta-btn">
-      지금 상담 시작
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-    </a>
   </div>
 </section>
 
