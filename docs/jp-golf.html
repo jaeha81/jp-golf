@@ -160,6 +160,7 @@
     background-position: center;
     box-shadow: 0 24px 54px rgba(32, 58, 82, 0.12);
   }
+  .mobile-scenery { display: none; }
   .hero-eyebrow {
     display: inline-flex;
     align-items: center;
@@ -1074,7 +1075,25 @@
     .nav-cta { padding: 8px 11px; font-size: 0.72rem; }
     .nav-admin { display: inline-flex; padding: 8px 5px; font-size: 0.72rem !important; }
     .hero { padding: 32px 14px 24px; gap: 24px; }
-    .hero-copy { min-height: 0; padding: 44px 26px; border-radius: 18px; background-image: linear-gradient(90deg, rgba(255, 252, 244, 0.98) 0%, rgba(255, 252, 244, 0.82) 72%, rgba(255, 252, 244, 0.34) 100%), url('/assets/japan-golf-hero.png'); }
+    .hero-copy {
+      min-height: 0;
+      padding: 44px 26px;
+      border-radius: 18px;
+      background-image: linear-gradient(180deg, rgba(255, 252, 244, 0.98) 0%, rgba(255, 252, 244, 0.92) 48%, rgba(255, 252, 244, 0.22) 100%), url('/assets/japan-golf-hero.png');
+      background-position: 66% center;
+      background-size: auto 100%;
+    }
+    .mobile-scenery {
+      display: block;
+      height: 138px;
+      margin: 22px 0 20px;
+      border: 1px solid rgba(184, 137, 61, 0.38);
+      border-radius: 12px;
+      background-image: linear-gradient(90deg, rgba(255, 252, 244, 0.04), rgba(255, 252, 244, 0.34)), url('/assets/japan-golf-hero.png');
+      background-position: 70% 62%;
+      background-size: cover;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+    }
     .hero h1 { font-size: clamp(2rem, 10vw, 2.8rem); }
     .hero h1 em { white-space: normal; }
     .hero-sub { font-size: 0.92rem; }
@@ -1138,6 +1157,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </a>
     </div>
+    <div class="mobile-scenery" aria-hidden="true"></div>
     <div class="hero-stats">
       <div>
         <div class="stat-num">일본</div>
