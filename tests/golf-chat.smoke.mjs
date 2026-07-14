@@ -163,6 +163,19 @@ assert.equal(res.body.source, 'fast-path');
 assert.equal(calls.length, 0);
 assert.match(res.body.content, /예산/);
 
+calls = [];
+res = response();
+await handler({
+  method: 'POST',
+  body: { messages: [{ role: 'user', content: '도쿄·근교 / 4 명 / 2026. 09. 10 / ¥20,000!' }] },
+  headers: { 'x-forwarded-for': '2.2.2.7' },
+  socket: {},
+}, res);
+assert.equal(res.statusCode, 200);
+assert.equal(res.body.source, 'fast-path');
+assert.equal(calls.length, 0);
+assert.match(res.body.content, /조건을 확인/);
+
 fetchMode = 'ok';
 for (let i = 0; i < 20; i += 1) {
   res = response();

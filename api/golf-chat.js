@@ -24,15 +24,25 @@ const RATE_LIMIT_MAX_KEYS = 1000;
 const rateLimitStore = globalThis.__jpGolfRateLimit ?? new Map();
 globalThis.__jpGolfRateLimit = rateLimitStore;
 
-function fallbackReply(messages) {
-  const text = messages
+function textForConditionMatching(messages) {
+  return messages
     .filter(message => message.role === 'user')
     .map(message => message.content)
-    .join(' ');
+    .join(' ')
+    .normalize('NFKC')
+    .replace(/[·•,，、]/g, ' ')
+    .replace(/[～〜]/g, '~')
+    .replace(/[／]/g, '/')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function fallbackReply(messages) {
+  const text = textForConditionMatching(messages);
   const region = text.match(/도쿄|지바|나리타|오사카|교토|후쿠오카|하코네|후지|오키나와|홋카이도|규슈/i);
-  const players = text.match(/([1-7])명|8명\s*이상/);
-  const date = text.match(/20\d{2}[-./년\s]+\d{1,2}[-./월\s]+\d{1,2}/);
-  const budget = text.match(/(?:예산|만원|천엔|JPY)|\d[\d,\s]*(?:원|엔)/i);
+  const players = text.match(/([1-7])\s*(?:명|인)|8\s*(?:명|인)\s*이상/);
+  const date = text.match(/20\d{2}\s*(?:[-./]|년)\s*\d{1,2}\s*(?:[-./]|월)\s*\d{1,2}\s*(?:일)?/);
+  const budget = text.match(/(?:예산|\d[\d,\s]*(?:만\s*원|천\s*엔|원|엔)|[¥￥]\s*\d[\d,\s]*|JPY\s*\d[\d,\s]*)/i);
 
   if (!region) return '원하시는 일본 골프 지역을 먼저 알려주세요. 예: 도쿄 근교, 오사카, 오키나와';
   if (!players) return '함께 라운드하실 인원을 알려주세요. 아래 플레이 인원 입력란을 사용하셔도 됩니다.';
@@ -42,11 +52,8 @@ function fallbackReply(messages) {
 }
 
 function hasConsultationCondition(messages) {
-  const text = messages
-    .filter(message => message.role === 'user')
-    .map(message => message.content)
-    .join(' ');
-  return /도쿄|지바|나리타|오사카|교토|후쿠오카|하코네|후지|오키나와|홋카이도|규슈|([1-7])명|8명\s*이상|20\d{2}[-./년\s]+\d{1,2}[-./월\s]+\d{1,2}|예산|만원|천엔|JPY|\d[\d,\s]*(?:원|엔)/i.test(text);
+  const text = textForConditionMatching(messages);
+  return /도쿄|지바|나리타|오사카|교토|후쿠오카|하코네|후지|오키나와|홋카이도|규슈|([1-7])\s*(?:명|인)|8\s*(?:명|인)\s*이상|20\d{2}\s*(?:[-./]|년)\s*\d{1,2}\s*(?:[-./]|월)\s*\d{1,2}\s*(?:일)?|예산|\d[\d,\s]*(?:만\s*원|천\s*엔|원|엔)|[¥￥]\s*\d[\d,\s]*|JPY\s*\d[\d,\s]*/i.test(text);
 }
 
 function getClientIp(req) {
