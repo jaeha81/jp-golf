@@ -203,6 +203,18 @@ assert.equal(res.body.content, '정상 응답');
 assert.equal(calls.length, 1);
 assert.match(JSON.parse(calls[0].options.body).system_instruction, /전문 골프 상담 규칙/);
 
+fetchMode = 'error';
+res = response();
+await handler({
+  method: 'POST',
+  body: { messages: [{ role: 'user', content: '가고시마 코스의 그린 스피드와 코스 레이팅을 알려줘.' }] },
+  headers: { 'x-forwarded-for': '2.2.2.10' },
+  socket: {},
+}, res);
+assert.equal(res.statusCode, 200);
+assert.equal(res.body.source, 'fallback');
+assert.match(res.body.content, /전문 코스 정보/);
+
 fetchMode = 'ok';
 for (let i = 0; i < 20; i += 1) {
   res = response();

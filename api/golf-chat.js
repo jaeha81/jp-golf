@@ -49,6 +49,9 @@ function textForConditionMatching(messages) {
 
 function fallbackReply(messages) {
   const text = textForConditionMatching(messages);
+  if (isGolfExpertQuestion(messages)) {
+    return '전문 코스 정보는 골프장별·티 박스별·시즌별로 달라집니다. 정확한 코스명과 희망 티(블루·화이트·레드 등), 라운딩 시기를 알려주시면 코스 레이팅·야디지·그린 조건을 기준으로 확인해 드리겠습니다.';
+  }
   const region = text.match(JAPAN_REGION_PATTERN) || text.match(/나리타|하코네|후지|규슈/i);
   const players = text.match(/([1-7])\s*(?:명|인)|8\s*(?:명|인)\s*이상/);
   const date = text.match(/20\d{2}\s*(?:[-./]|년)\s*\d{1,2}\s*(?:[-./]|월)\s*\d{1,2}\s*(?:일)?/);
