@@ -302,6 +302,7 @@
     border-radius: 50%;
     animation: pulse 2s infinite;
   }
+  .chat-close { display: none; }
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.35; }
@@ -1100,8 +1101,32 @@
     .hero h1 { font-size: clamp(2rem, 10vw, 2.8rem); }
     .hero h1 em { white-space: normal; }
     .hero-sub { font-size: 0.92rem; }
-    .chat-widget { height: min(720px, calc(100dvh - 24px)); min-height: 0; border-radius: 16px; }
+    .hero.chat-open {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: block;
+      width: 100%;
+      max-width: none;
+      height: 100dvh;
+      margin: 0;
+      padding: 0;
+    }
+    .hero.chat-open .chat-widget { height: 100dvh; min-height: 0; border: 0; border-radius: 0; }
     .chat-header { padding: 14px; }
+    .chat-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      min-height: 36px;
+      margin-left: auto;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--green-deep);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
     .chat-body { padding: 16px 12px; gap: 10px; }
     .msg { max-width: 94%; padding: 10px 12px; font-size: 0.84rem; overflow-wrap: anywhere; }
     .booking-fields { grid-template-columns: 1fr; padding: 10px 12px; gap: 7px; }
@@ -1185,6 +1210,7 @@
         <strong>JP Golf 상담 AI</strong>
         <span class="chat-id-status">베타 데모 · 예시 결과 표시</span>
       </div>
+      <button type="button" class="chat-close" id="closeMobileChat" onclick="document.querySelector('.hero').classList.remove('chat-open');history.replaceState(null,'','#chat');window.scrollTo({top:0,behavior:'smooth'})">닫기</button>
     </div>
     <div class="chat-body" id="chatBody"></div>
     <form class="chat-input" id="chatForm">
@@ -1926,6 +1952,13 @@
       requestAnimationFrame(() => chatWidget?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
       history.replaceState(null, '', '#chatWidget');
     });
+  });
+
+  document.getElementById('closeMobileChat').addEventListener('click', () => {
+    const hero = document.querySelector('.hero');
+    hero?.classList.remove('chat-open');
+    history.replaceState(null, '', '#chat');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   document.querySelectorAll('.faq-item').forEach(item => {
