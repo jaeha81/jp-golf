@@ -24,6 +24,31 @@ const RATE_LIMIT_MAX_KEYS = 1000;
 const rateLimitStore = globalThis.__jpGolfRateLimit ?? new Map();
 globalThis.__jpGolfRateLimit = rateLimitStore;
 
+function fallbackReply(messages) {
+  const text = messages
+    .filter(message => message.role === 'user')
+    .map(message => message.content)
+    .join(' ');
+  const region = text.match(/도쿄|지바|나리타|오사카|교토|후쿠오카|하코네|후지|오키나와|홋카이도|규슈/i);
+  const players = text.match(/([1-7])명|8명\s*이상/);
+  const date = text.match(/20\d{2}[-./년\s]+\d{1,2}[-./월\s]+\d{1,2}/);
+  const budget = text.match(/(?:예산|만원|천엔|JPY)|\d[\d,\s]*(?:원|엔)/i);
+
+  if (!region) return '원하시는 일본 골프 지역을 먼저 알려주세요. 예: 도쿄 근교, 오사카, 오키나와';
+  if (!players) return '함께 라운드하실 인원을 알려주세요. 아래 플레이 인원 입력란을 사용하셔도 됩니다.';
+  if (!date) return '희망 라운딩 날짜를 알려주세요. 아래 날짜 입력란에서 선택하셔도 됩니다.';
+  if (!budget) return '1인당 선호 예산을 알려주세요. 아래 예산 입력란에 입력하시면 바로 반영됩니다.';
+  return '조건을 확인했습니다. 아래 상담 의뢰에 연락처와 원하는 조건을 남겨주시면 상담사가 이어서 도와드리겠습니다.';
+}
+
+function hasConsultationCondition(messages) {
+  const text = messages
+    .filter(message => message.role === 'user')
+    .map(message => message.content)
+    .join(' ');
+  return /도쿄|지바|나리타|오사카|교토|후쿠오카|하코네|후지|오키나와|홋카이도|규슈|([1-7])명|8명\s*이상|20\d{2}[-./년\s]+\d{1,2}[-./월\s]+\d{1,2}|예산|만원|천엔|JPY|\d[\d,\s]*(?:원|엔)/i.test(text);
+}
+
 function getClientIp(req) {
   const forwarded = req.headers?.['x-forwarded-for'];
   if (typeof forwarded === 'string' && forwarded.trim()) return forwarded.split(',')[0].trim();
@@ -95,6 +120,12 @@ export default async function handler(req, res) {
     normalizedMessages.push({ role: message.role, content });
   }
 
+  const fastReply = fallbackReply(normalizedMessages);
+  if (hasConsultationCondition(normalizedMessages)) {
+    res.status(200).json({ content: fastReply, source: 'fast-path' });
+    return;
+  }
+
   const apiKey = (
     process.env.GEMINI_API_KEY
     || process.env.GOOGLE_API_KEY
@@ -128,23 +159,23 @@ export default async function handler(req, res) {
             thinking_summaries: 'none',
           },
         }),
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(8_000),
       },
     );
   } catch {
-    res.status(502).json({ error: 'Upstream API error' });
+    res.status(200).json({ content: fallbackReply(normalizedMessages), source: 'fallback' });
     return;
   }
 
   if (!geminiRes.ok) {
-    res.status(502).json({ error: 'Upstream API error' });
+    res.status(200).json({ content: fallbackReply(normalizedMessages), source: 'fallback' });
     return;
   }
   let data;
   try {
     data = await geminiRes.json();
   } catch {
-    res.status(502).json({ error: 'Upstream API error' });
+    res.status(200).json({ content: fallbackReply(normalizedMessages), source: 'fallback' });
     return;
   }
   const steps = Array.isArray(data?.steps) ? data.steps : [];
@@ -157,7 +188,7 @@ export default async function handler(req, res) {
       .trim()
     : '';
   if (!content) {
-    res.status(502).json({ error: 'Empty upstream response' });
+    res.status(200).json({ content: fallbackReply(normalizedMessages), source: 'fallback' });
     return;
   }
   res.status(200).json({ content });

@@ -79,8 +79,8 @@ await handler({
   method: 'POST',
   body: {
     messages: [
-      { role: 'user', content: '도쿄 골프장을 추천해줘' },
-      { role: 'assistant', content: '날짜와 인원을 알려주세요.' },
+      { role: 'user', content: 'General course question' },
+      { role: 'assistant', content: 'Please share your preference.' },
     ],
   },
   headers: { 'x-forwarded-for': '1.1.1.1' },
@@ -101,8 +101,8 @@ assert.deepEqual(upstreamBody.generation_config, {
   thinking_summaries: 'none',
 });
 assert.deepEqual(upstreamBody.input, [
-  { type: 'user_input', content: [{ type: 'text', text: '도쿄 골프장을 추천해줘' }] },
-  { type: 'model_output', content: [{ type: 'text', text: '날짜와 인원을 알려주세요.' }] },
+  { type: 'user_input', content: [{ type: 'text', text: 'General course question' }] },
+  { type: 'model_output', content: [{ type: 'text', text: 'Please share your preference.' }] },
 ]);
 
 fetchMode = 'error';
@@ -113,8 +113,9 @@ await handler({
   headers: { 'x-forwarded-for': '2.2.2.2' },
   socket: {},
 }, res);
-assert.equal(res.statusCode, 502);
-assert.equal('detail' in res.body, false);
+assert.equal(res.statusCode, 200);
+assert.equal(typeof res.body.content, 'string');
+assert.equal(res.body.source, 'fallback');
 
 fetchMode = 'empty';
 res = response();
@@ -124,7 +125,8 @@ await handler({
   headers: { 'x-forwarded-for': '2.2.2.3' },
   socket: {},
 }, res);
-assert.equal(res.statusCode, 502);
+assert.equal(res.statusCode, 200);
+assert.equal(res.body.source, 'fallback');
 
 fetchMode = 'throw';
 res = response();
@@ -134,7 +136,8 @@ await handler({
   headers: { 'x-forwarded-for': '2.2.2.4' },
   socket: {},
 }, res);
-assert.equal(res.statusCode, 502);
+assert.equal(res.statusCode, 200);
+assert.equal(res.body.source, 'fallback');
 
 fetchMode = 'bad-json';
 res = response();
@@ -144,7 +147,21 @@ await handler({
   headers: { 'x-forwarded-for': '2.2.2.5' },
   socket: {},
 }, res);
-assert.equal(res.statusCode, 502);
+assert.equal(res.statusCode, 200);
+assert.equal(res.body.source, 'fallback');
+
+calls = [];
+res = response();
+await handler({
+  method: 'POST',
+  body: { messages: [{ role: 'user', content: '도쿄 근교에서 4명, 2026-09-10 라운드를 원합니다.' }] },
+  headers: { 'x-forwarded-for': '2.2.2.6' },
+  socket: {},
+}, res);
+assert.equal(res.statusCode, 200);
+assert.equal(res.body.source, 'fast-path');
+assert.equal(calls.length, 0);
+assert.match(res.body.content, /예산/);
 
 fetchMode = 'ok';
 for (let i = 0; i < 20; i += 1) {
