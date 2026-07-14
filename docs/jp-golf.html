@@ -136,6 +136,15 @@
     gap: 60px;
     align-items: center;
   }
+  .hero:not(.chat-open) {
+    grid-template-columns: minmax(0, 620px);
+    justify-content: center;
+  }
+  .hero.chat-open {
+    grid-template-columns: minmax(0, 680px);
+    justify-content: center;
+  }
+  .hero.chat-open .hero-copy { display: none; }
   .hero-eyebrow {
     display: inline-flex;
     align-items: center;
@@ -235,6 +244,7 @@
     height: 580px;
     position: relative;
   }
+  .hero:not(.chat-open) .chat-widget { display: none; }
   .chat-header {
     padding: 18px 22px;
     border-bottom: 1px solid var(--border);
@@ -1095,7 +1105,7 @@
 
 <!-- Hero with chat -->
 <section class="hero" id="chat">
-  <div>
+  <div class="hero-copy">
     <div class="hero-eyebrow">베타 서비스 · 일본 골프 예시 정보 상담</div>
     <h1>
       일본 골프 티타임,<br>
@@ -1851,11 +1861,15 @@
   renderFeaturedCourses();
 
   // FAQ toggle
-  document.querySelector('.hero-cta-btn')?.addEventListener('click', event => {
-    event.preventDefault();
-    const chatWidget = document.getElementById('chatWidget');
-    chatWidget?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    history.replaceState(null, '', '#chatWidget');
+  document.querySelectorAll('.hero-cta-btn, .nav-cta').forEach(button => {
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      const hero = document.querySelector('.hero');
+      const chatWidget = document.getElementById('chatWidget');
+      hero?.classList.add('chat-open');
+      requestAnimationFrame(() => chatWidget?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+      history.replaceState(null, '', '#chatWidget');
+    });
   });
 
   document.querySelectorAll('.faq-item').forEach(item => {
