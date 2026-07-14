@@ -17,6 +17,10 @@ const JAPAN_ADMINISTRATIVE_CONTEXT = `
 지역 해석 규칙: 고객은 일본 47개 도도부현, 시·군·구·정·촌, 공항명 또는 골프장 인근 소도시를 한국어·일본어·영문으로 물어볼 수 있다. 표기가 낯선 소도시라도 "서비스 지역이 아니다"라고 단정하지 말고, 해당 시·군·구가 속한 도도부현과 인근 공항·대표 도시를 확인하는 짧은 질문으로 이어간다. 지역을 이해했다면 먼저 인원과 여행 날짜를 확인한다.
 `;
 
+const GOLF_EXPERT_CONTEXT = `
+전문 골프 상담 규칙: 고객은 싱글 핸디캡부터 경쟁 골퍼까지를 포함한다. 핸디캡·코스 레이팅·슬로프 레이팅·티 박스·야디지·파·그린 스피드(Stimpmeter)·잔디 종류·벙커·워터 해저드·고저차·도그레그·바람·난이도·전략을 전문 용어로 정확하고 간결하게 설명한다. 일본 골프의 셀프 플레이/캐디, 카트 방식, 점심 휴식 유무, 스루 플레이, 2인 추가요금, 복장·에티켓·로컬 룰도 구분해 안내한다. 특정 코스의 수치나 당일 컨디션은 공식 코스 가이드·예약 페이지 확인이 필요한 정보임을 밝히고 추측으로 단정하지 않는다. 전문 질문에는 일반 예약 조건을 먼저 묻지 말고 질문 자체에 답한 뒤, 필요하면 코스·티·날짜를 한 가지씩 확인한다.
+`;
+
 const JAPAN_REGION_PATTERN = /홋카이도|아오모리|이와테|미야기|아키타|야마가타|후쿠시마|이바라키|도치기|군마|사이타마|지바|도쿄|가나가와|니가타|도야마|이시카와|후쿠이|야마나시|나가노|기후|시즈오카|아이치|미에|시가|교토|오사카|효고|나라|와카야마|돗토리|시마네|오카야마|히로시마|야마구치|도쿠시마|카가와|에히메|고치|후쿠오카|사가|나가사키|구마모토|오이타|미야자키|가고시마|오키나와|北海道|青森|岩手|宮城|秋田|山形|福島|茨城|栃木|群馬|埼玉|千葉|東京|神奈川|新潟|富山|石川|福井|山梨|長野|岐阜|静岡|愛知|三重|滋賀|京都|大阪|兵庫|奈良|和歌山|鳥取|島根|岡山|広島|山口|徳島|香川|愛媛|高知|福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島|沖縄/i;
 
 const FREE_MODEL = process.env.JP_GOLF_GEMINI_MODEL || 'gemini-3.5-flash';
@@ -60,6 +64,11 @@ function fallbackReply(messages) {
 function hasConsultationCondition(messages) {
   const text = textForConditionMatching(messages);
   return JAPAN_REGION_PATTERN.test(text) || /나리타|하코네|후지|규슈|([1-7])\s*(?:명|인)|8\s*(?:명|인)\s*이상|20\d{2}\s*(?:[-./]|년)\s*\d{1,2}\s*(?:[-./]|월)\s*\d{1,2}\s*(?:일)?|예산|\d[\d,\s]*(?:만\s*원|천\s*엔|원|엔)|[¥￥]\s*\d[\d,\s]*|JPY\s*\d[\d,\s]*/i.test(text);
+}
+
+function isGolfExpertQuestion(messages) {
+  const text = textForConditionMatching(messages);
+  return /핸디|handicap|hdcp|코스\s*레이팅|course\s*rating|슬로프|slope|티\s*(박스|마커|오프)|tee\s*(box|marker|off)|야디지|yardage|파\s*[3-5]|par\s*[3-5]|그린\s*스피드|stimp|잔디|벙커|해저드|도그레그|dogleg|캐디|셀프\s*플레이|카트|스루\s*플레이|점심\s*휴식|로컬\s*룰|에티켓|코스\s*공략|난이도/i.test(text);
 }
 
 function getClientIp(req) {
@@ -134,7 +143,7 @@ export default async function handler(req, res) {
   }
 
   const fastReply = fallbackReply(normalizedMessages);
-  if (hasConsultationCondition(normalizedMessages)) {
+  if (hasConsultationCondition(normalizedMessages) && !isGolfExpertQuestion(normalizedMessages)) {
     res.status(200).json({ content: fastReply, source: 'fast-path' });
     return;
   }
@@ -163,7 +172,7 @@ export default async function handler(req, res) {
         headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           model: FREE_MODEL.startsWith('models/') ? FREE_MODEL : `models/${FREE_MODEL}`,
-          system_instruction: `${SYSTEM_PROMPT}\n${CONSULTATION_FLOW}\n${JAPAN_ADMINISTRATIVE_CONTEXT}`,
+          system_instruction: `${SYSTEM_PROMPT}\n${CONSULTATION_FLOW}\n${JAPAN_ADMINISTRATIVE_CONTEXT}\n${GOLF_EXPERT_CONTEXT}`,
           input,
           store: false,
           generation_config: {
