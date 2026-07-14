@@ -1562,6 +1562,8 @@
 
   let chatMessages = [];
   let selectedCourse = null;
+  let idleConsultationTimer = null;
+  let idlePromptShown = false;
   const GOLF_API_URL = '/api/golf-chat';
   const QUICK_REGION_RESPONSES = {
     '도쿄 근교': '도쿄 근교로 안내드릴게요. 아래 입력란에서 희망 날짜·플레이 인원·1인당 예산을 입력한 뒤 “상담에 반영”을 눌러주세요.',
@@ -1574,6 +1576,24 @@
 
   function scrollBottom() {
     requestAnimationFrame(() => { body.scrollTop = body.scrollHeight; });
+  }
+
+  function clearIdleConsultationTimer() {
+    if (idleConsultationTimer) window.clearTimeout(idleConsultationTimer);
+    idleConsultationTimer = null;
+  }
+
+  function scheduleIdleConsultationPrompt() {
+    clearIdleConsultationTimer();
+    if (idlePromptShown || !document.querySelector('.hero')?.classList.contains('chat-open')) return;
+    idleConsultationTimer = window.setTimeout(() => {
+      if (idlePromptShown || input.value.trim() || !document.querySelector('.hero')?.classList.contains('chat-open')) return;
+      idlePromptShown = true;
+      const prompt = '더이상 질문하실 내용이 없으시면 지금까지 상담한 내용을 바탕으로 예약신청서를 만들어 드릴까요?';
+      addMsg('ai', prompt);
+      chatMessages.push({ role: 'assistant', content: prompt });
+      addSuggestions(['예약 신청서 만들기']);
+    }, 20_000);
   }
 
   function addMsg(role, text) {
@@ -1608,6 +1628,11 @@
       btn.textContent = t;
       btn.addEventListener('click', () => {
         wrap.remove();
+        if (t === '예약 신청서 만들기') {
+          document.getElementById('requestForm').classList.add('is-visible');
+          document.getElementById('requestName').focus();
+          return;
+        }
         const isBookingBtn = t.startsWith('공식 페이지에서 최종 가격 확인');
         handleUserInput(t, { _explicitBooking: isBookingBtn });
       });
@@ -1678,6 +1703,7 @@
       await delay(200);
       addSuggestions(suggestions);
     }
+    scheduleIdleConsultationPrompt();
   }
 
   const courses = [
@@ -1717,6 +1743,8 @@
   }
 
   function handleUserInput(text, options = {}) {
+    clearIdleConsultationTimer();
+    idlePromptShown = false;
     if (!options.skipEcho) addMsg('user', text);
 
     // 처음부터 다시 요청
@@ -1805,11 +1833,13 @@
           await delay(400);
           addSuggestions(['공식 페이지에서 최종 가격 확인 및 예약', '다른 골프장 보기', '처음부터 다시']);
         }
+        scheduleIdleConsultationPrompt();
 
       } catch (err) {
         removeTyping();
         console.error('Golf AI error:', err);
         addMsg('ai', '응답이 지연되고 있어요. 아래 입력란에 날짜·인원·예산을 입력해 주시면 바로 상담 조건에 반영할게요.');
+        scheduleIdleConsultationPrompt();
       }
     })();
   }
@@ -1821,6 +1851,7 @@
     input.value = '';
     handleUserInput(text);
   });
+  input.addEventListener('input', clearIdleConsultationTimer);
   applyBookingFields.addEventListener('click', applySelectedConditions);
   document.getElementById('requestForm').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -1949,12 +1980,14 @@
       const hero = document.querySelector('.hero');
       const chatWidget = document.getElementById('chatWidget');
       hero?.classList.add('chat-open');
+      scheduleIdleConsultationPrompt();
       requestAnimationFrame(() => chatWidget?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
       history.replaceState(null, '', '#chatWidget');
     });
   });
 
   document.getElementById('closeMobileChat').addEventListener('click', () => {
+    clearIdleConsultationTimer();
     const hero = document.querySelector('.hero');
     hero?.classList.remove('chat-open');
     history.replaceState(null, '', '#chat');
