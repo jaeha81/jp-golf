@@ -1068,6 +1068,12 @@
     .footer-inner { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 560px) {
+    body.mobile-chat-open,
+    body:has(.hero.chat-open) { overflow: hidden; }
+    body.mobile-chat-open .beta-banner,
+    body.mobile-chat-open .nav,
+    body:has(.hero.chat-open) .beta-banner,
+    body:has(.hero.chat-open) .nav { display: none; }
     .course-tools { padding:0 14px; align-items:stretch; }
     .course-tools label { flex:1 1 45%; }
     .course-tools select { width:100%; margin:4px 0 0; }
@@ -1210,7 +1216,7 @@
         <strong>JP Golf 상담 AI</strong>
         <span class="chat-id-status">베타 데모 · 예시 결과 표시</span>
       </div>
-      <button type="button" class="chat-close" id="closeMobileChat" onclick="document.querySelector('.hero').classList.remove('chat-open');history.replaceState(null,'','#chat');window.scrollTo({top:0,behavior:'smooth'})">닫기</button>
+      <button type="button" class="chat-close" id="closeMobileChat" onclick="document.querySelector('.hero').classList.remove('chat-open');document.body.classList.remove('mobile-chat-open');history.replaceState(null,'','#chat');window.scrollTo({top:0,behavior:'smooth'})">닫기</button>
     </div>
     <div class="chat-body" id="chatBody"></div>
     <form class="chat-input" id="chatForm">
@@ -1980,6 +1986,7 @@
       const hero = document.querySelector('.hero');
       const chatWidget = document.getElementById('chatWidget');
       hero?.classList.add('chat-open');
+      document.body.classList.add('mobile-chat-open');
       scheduleIdleConsultationPrompt();
       requestAnimationFrame(() => chatWidget?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
       history.replaceState(null, '', '#chatWidget');
@@ -1990,6 +1997,7 @@
     clearIdleConsultationTimer();
     const hero = document.querySelector('.hero');
     hero?.classList.remove('chat-open');
+    document.body.classList.remove('mobile-chat-open');
     history.replaceState(null, '', '#chat');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
