@@ -261,6 +261,8 @@
     position: relative;
   }
   .hero:not(.chat-open) .chat-widget { display: none; }
+  .hero:not(.chat-open) .booking-conditions,
+  .hero:not(.chat-open) #requestForm { display: none; }
   .chat-header {
     padding: 18px 22px;
     border-bottom: 1px solid var(--border);
@@ -1197,6 +1199,7 @@
         </svg>
       </button>
     </form>
+  </div>
     <div class="booking-fields booking-conditions" aria-label="골프 상담 조건 입력">
       <div class="booking-field">
         <label for="golfDate">희망 날짜</label>
@@ -1245,7 +1248,6 @@
       <button type="submit" class="booking-apply" id="submitRequest">상담 의뢰 저장</button>
       <p id="requestStatus" role="status" style="grid-column: 1 / -1; font-size: .8rem"></p>
     </form>
-  </div>
 </section>
 
 <!-- Trust band -->
