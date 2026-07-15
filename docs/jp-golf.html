@@ -1871,8 +1871,25 @@
           request: document.getElementById('requestNote').value
         })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || '저장에 실패했습니다.');
+      const contentType = response.headers.get('content-type') || '';
+      const data = contentType.includes('application/json') ? await response.json() : null;
+
+      if (!response.ok) {
+        if (!contentType.includes('application/json')) {
+          const isLocalPreview = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
+          throw new Error(
+            isLocalPreview
+              ? '현재 미리보기 화면에서는 상담 의뢰를 저장할 수 없습니다. 운영 사이트에서 다시 시도해 주세요.'
+              : '저장 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+          );
+        }
+        throw new Error(data?.error || '저장에 실패했습니다.');
+      }
+
+      if (!data?.request?.id) {
+        throw new Error('저장 결과를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+
       status.textContent = `의뢰가 접수되었습니다. 접수번호 ${data.request.id}`;
       event.target.reset();
     } catch (error) {
