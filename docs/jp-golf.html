@@ -1965,7 +1965,6 @@
       <div class="course-modal__body"><h3>${course.name}</h3><p>${course.jp} · ${course.region}</p><p>${course.summary}</p>
         <div class="course-modal__grid"><div><h4>코스 정보</h4><ul><li>${course.holes}</li><li>${course.distance}</li></ul></div><div><h4>주요 시설</h4><ul>${course.facilities.map(item => `<li>${item}</li>`).join('')}</ul></div></div>
         <div class="course-modal__gallery">${course.images.map((image, index) => `<img src="${image}" alt="${course.name} 사진 ${index + 1}" loading="lazy">`).join('')}</div>
-        <a class="redirect-btn" href="${course.officialUrl}" target="_blank" rel="noopener sponsored">공식 페이지에서 예약·최신 요금 확인 →</a>
       </div></div>`;
     modal.hidden = false;
   }
