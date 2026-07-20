@@ -51,6 +51,11 @@ export default async function handler(req, res) {
     )`;
     await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS stay_nights INTEGER`;
     await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS stay_end_date DATE`;
+    await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS quote_course_name TEXT`;
+    await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS quote_date DATE`;
+    await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS quote_tee_time TEXT`;
+    await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS quote_price_per_person INTEGER`;
+    await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS quote_google_maps_url TEXT`;
     await sql`CREATE INDEX IF NOT EXISTS customer_requests_status_created_idx ON customer_requests (status, created_at)`;
 
     if (req.method === 'POST') {
@@ -75,7 +80,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'GET') {
-      const rows = await sql`SELECT id, name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, status, created_at, updated_at
+      const rows = await sql`SELECT id, name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, status, quote_course_name, quote_date, quote_tee_time, quote_price_per_person, quote_google_maps_url, created_at, updated_at
         FROM customer_requests ORDER BY id ASC LIMIT 200`;
       return json(res, 200, { requests: rows });
     }
@@ -84,8 +89,18 @@ export default async function handler(req, res) {
       if (typeof body === 'string') body = JSON.parse(body);
       const id = Number(body?.id);
       const status = clean(body?.status, 20);
+      const quoteCourseName = clean(body?.quoteCourseName, 160);
+      const quoteDate = clean(body?.quoteDate, 10);
+      const quoteTeeTime = clean(body?.quoteTeeTime, 20);
+      const quotePricePerPerson = Number(body?.quotePricePerPerson);
+      const quoteGoogleMapsUrl = clean(body?.quoteGoogleMapsUrl, 1000);
       if (!Number.isInteger(id) || !['new', 'contacted', 'quoted', 'closed'].includes(status)) return json(res, 400, { error: '요청 상태가 올바르지 않습니다.' });
-      const result = await sql`UPDATE customer_requests SET status=${status}, updated_at=NOW() WHERE id=${id} RETURNING id, status, updated_at`;
+      if (quoteDate && !/^\d{4}-\d{2}-\d{2}$/.test(quoteDate)) return json(res, 400, { error: '검수 날짜 형식이 올바르지 않습니다.' });
+      if (quoteTeeTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(quoteTeeTime)) return json(res, 400, { error: '티타임은 HH:MM 형식으로 입력해 주세요.' });
+      if (quoteGoogleMapsUrl && !/^https:\/\/(?:www\.)?(?:google\.[^/]+\/maps|maps\.google\.[^/]+|maps\.app\.goo\.gl\/)/i.test(quoteGoogleMapsUrl)) return json(res, 400, { error: '구글맵 공유 주소를 입력해 주세요.' });
+      const hasQuote = quoteCourseName && quoteDate && quoteTeeTime && Number.isInteger(quotePricePerPerson) && quotePricePerPerson > 0 && quoteGoogleMapsUrl;
+      if (status === 'quoted' && !hasQuote) return json(res, 400, { error: '견적안내 전 골프장, 날짜, 티타임, 1인 가격, 구글맵 주소를 모두 입력해 주세요.' });
+      const result = await sql`UPDATE customer_requests SET status=${status}, quote_course_name=${quoteCourseName || null}, quote_date=${quoteDate || null}, quote_tee_time=${quoteTeeTime || null}, quote_price_per_person=${Number.isInteger(quotePricePerPerson) && quotePricePerPerson > 0 ? quotePricePerPerson : null}, quote_google_maps_url=${quoteGoogleMapsUrl || null}, updated_at=NOW() WHERE id=${id} RETURNING id, status, quote_course_name, quote_date, quote_tee_time, quote_price_per_person, quote_google_maps_url, updated_at`;
       if (!result.length) return json(res, 404, { error: '의뢰를 찾을 수 없습니다.' });
       return json(res, 200, { request: result[0] });
     }
