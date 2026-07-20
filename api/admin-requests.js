@@ -29,6 +29,32 @@ function clean(value, max = MAX_TEXT) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
 }
 
+async function notifyAdminWebhook(request) {
+  const rawUrl = process.env.ADMIN_REQUEST_WEBHOOK_URL?.trim();
+  if (!rawUrl) return 'not_configured';
+  let url;
+  try {
+    url = new URL(rawUrl);
+    if (url.protocol !== 'https:') throw new Error('Webhook URL must use HTTPS');
+  } catch (error) {
+    console.error('Admin request webhook URL is invalid:', error?.message || error);
+    return 'failed';
+  }
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-JP-Golf-Event': 'consultation.received' },
+      body: JSON.stringify({ event: 'consultation.received', occurredAt: new Date().toISOString(), request }),
+      signal: AbortSignal.timeout(3000)
+    });
+    if (!response.ok) throw new Error(`Webhook returned ${response.status}`);
+    return 'delivered';
+  } catch (error) {
+    console.error('Admin request webhook failed:', error?.message || error);
+    return 'failed';
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST' && !adminAuthorized(req)) return json(res, 401, { error: '관리자 비밀번호가 올바르지 않습니다.' });
   const sql = database();
@@ -56,6 +82,8 @@ export default async function handler(req, res) {
     await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS quote_tee_time TEXT`;
     await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS quote_price_per_person INTEGER`;
     await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS quote_google_maps_url TEXT`;
+    await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS hook_status TEXT NOT NULL DEFAULT 'not_configured'`;
+    await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS hook_attempted_at TIMESTAMPTZ`;
     await sql`CREATE INDEX IF NOT EXISTS customer_requests_status_created_idx ON customer_requests (status, created_at)`;
 
     if (req.method === 'POST') {
@@ -75,12 +103,15 @@ export default async function handler(req, res) {
       if (body?.players && (!Number.isInteger(players) || players < 1 || players > 20)) return json(res, 400, { error: '인원 수가 올바르지 않습니다.' });
       const result = await sql`INSERT INTO customer_requests (name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request)
         VALUES (${name}, ${contact}, ${body.golfDate || null}, ${body.stayEndDate || null}, ${body?.stayNights !== '' && body?.stayNights != null ? stayNights : null}, ${body.players ? players : null}, ${body.budgetPerPerson ? budget : null}, ${request})
-        RETURNING id, status, created_at`;
-      return json(res, 201, { request: result[0] });
+        RETURNING id, name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, status, created_at`;
+      const hookStatus = await notifyAdminWebhook(result[0]);
+      const updated = await sql`UPDATE customer_requests SET hook_status=${hookStatus}, hook_attempted_at=NOW(), updated_at=NOW() WHERE id=${result[0].id}
+        RETURNING id, status, hook_status, hook_attempted_at, created_at`;
+      return json(res, 201, { request: updated[0] });
     }
 
     if (req.method === 'GET') {
-      const rows = await sql`SELECT id, name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, status, quote_course_name, quote_date, quote_tee_time, quote_price_per_person, quote_google_maps_url, created_at, updated_at
+      const rows = await sql`SELECT id, name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, status, quote_course_name, quote_date, quote_tee_time, quote_price_per_person, quote_google_maps_url, hook_status, hook_attempted_at, created_at, updated_at
         FROM customer_requests ORDER BY id ASC LIMIT 200`;
       return json(res, 200, { requests: rows });
     }
