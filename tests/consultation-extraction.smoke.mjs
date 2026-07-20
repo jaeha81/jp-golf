@@ -12,7 +12,7 @@ const fields = {
 };
 const document = { getElementById: id => fields[id] };
 const chatMessages = [{ role: 'user', content: '후쿠오카에서 2026년 9월 10일부터 9월 13일까지 4명, 1인당 20만원으로 갈게요.' }];
-const evaluator = new Function('document', 'chatMessages', 'fetch', 'chatSessionId', `const golfDate=document.getElementById('golfDate'),golfEndDate=document.getElementById('golfEndDate'),golfPlayers=document.getElementById('golfPlayers'),golfBudget=document.getElementById('golfBudget'); let consultationRegion = ''; const updateStayLength = () => {};${source}\nreturn { extractConsultationConditions, consultationSummary };`);
+const evaluator = new Function('document', 'chatMessages', 'fetch', 'chatSessionId', `const golfDate=document.getElementById('golfDate'),golfEndDate=document.getElementById('golfEndDate'),golfPlayers=document.getElementById('golfPlayers'),golfBudget=document.getElementById('golfBudget'); let consultationRegion = ''; const updateStayLength = () => {}; const queueSessionConditions = () => {};${source}\nreturn { extractConsultationConditions, consultationSummary };`);
 const { extractConsultationConditions, consultationSummary } = evaluator(document, chatMessages, () => Promise.resolve(), '00000000-0000-4000-8000-000000000001');
 
 extractConsultationConditions(chatMessages[0].content);

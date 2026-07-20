@@ -17,7 +17,10 @@ function sessionId(value) {
   return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : '';
 }
 
+let schemaReady;
 async function ensureTables(sql) {
+  if (schemaReady) return schemaReady;
+  schemaReady = (async () => {
   await sql`CREATE TABLE IF NOT EXISTS chat_sessions (
     session_id UUID PRIMARY KEY, status TEXT NOT NULL DEFAULT 'active', region TEXT,
     golf_date DATE, stay_end_date DATE, players INTEGER, budget_per_person INTEGER,
@@ -29,6 +32,8 @@ async function ensureTables(sql) {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
   await sql`CREATE INDEX IF NOT EXISTS chat_messages_session_created_idx ON chat_messages (session_id, created_at)`;
+  })().catch(error => { schemaReady = null; throw error; });
+  return schemaReady;
 }
 
 export default async function handler(req, res) {
@@ -39,11 +44,18 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       let body = req.body;
       if (typeof body === 'string') body = JSON.parse(body);
-      const id = sessionId(body?.sessionId), role = clean(body?.role, 10), content = clean(body?.content);
-      if (!id || !['user', 'ai', 'system'].includes(role) || !content) return json(res, 400, { error: '상담 메시지 형식이 올바르지 않습니다.' });
+      const id = sessionId(body?.sessionId);
+      const messages = Array.isArray(body?.messages) ? body.messages : [{ role: body?.role, content: body?.content }];
+      if (!id || !messages.length || messages.length > 20) return json(res, 400, { error: '상담 메시지 형식이 올바르지 않습니다.' });
+      const normalized = messages.map(message => ({ role: clean(message?.role, 10), content: clean(message?.content) }));
+      if (normalized.some(message => !['user', 'ai', 'system'].includes(message.role) || !message.content)) return json(res, 400, { error: '상담 메시지 형식이 올바르지 않습니다.' });
       await sql`INSERT INTO chat_sessions (session_id) VALUES (${id}::uuid) ON CONFLICT (session_id) DO UPDATE SET updated_at=NOW()`;
-      const result = await sql`INSERT INTO chat_messages (session_id, role, content) VALUES (${id}::uuid, ${role}, ${content}) RETURNING id, created_at`;
-      return json(res, 201, { message: result[0] });
+      const saved = [];
+      for (const message of normalized) {
+        const result = await sql`INSERT INTO chat_messages (session_id, role, content) VALUES (${id}::uuid, ${message.role}, ${message.content}) RETURNING id, created_at`;
+        saved.push(result[0]);
+      }
+      return json(res, 201, { messages: saved });
     }
     if (req.method === 'PATCH') {
       let body = req.body;

@@ -1545,6 +1545,31 @@
   const CHAT_SESSION_KEY = 'jp-golf-chat-session-id';
   const chatSessionId = sessionStorage.getItem(CHAT_SESSION_KEY) || crypto.randomUUID();
   sessionStorage.setItem(CHAT_SESSION_KEY, chatSessionId);
+  const pendingSessionMessages = [];
+  let sessionMessageFlushTimer = null;
+  let sessionConditionFlushTimer = null;
+
+  function flushSessionMessages() {
+    sessionMessageFlushTimer = null;
+    const messages = pendingSessionMessages.splice(0, 20);
+    if (!messages.length) return;
+    fetch('/api/chat-sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: chatSessionId, messages }) })
+      .catch(() => {})
+      .finally(() => { if (pendingSessionMessages.length) flushSessionMessages(); });
+  }
+
+  function queueSessionMessage(role, content) {
+    pendingSessionMessages.push({ role, content });
+    if (pendingSessionMessages.length >= 10) return flushSessionMessages();
+    if (!sessionMessageFlushTimer) sessionMessageFlushTimer = window.setTimeout(flushSessionMessages, 1200);
+  }
+
+  function queueSessionConditions() {
+    if (sessionConditionFlushTimer) window.clearTimeout(sessionConditionFlushTimer);
+    sessionConditionFlushTimer = window.setTimeout(() => {
+      fetch('/api/chat-sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: chatSessionId, region: consultationRegion, golfDate: golfDate.value, stayEndDate: golfEndDate.value, players: golfPlayers.value, budgetPerPerson: golfBudget.value }) }).catch(() => {});
+    }, 700);
+  }
   const QUICK_REGION_RESPONSES = {
     '도쿄 근교': '도쿄 근교로 안내드릴게요. 아래 입력란에서 희망 날짜·플레이 인원·1인당 예산을 입력한 뒤 “상담에 반영”을 눌러주세요.',
     '오사카 · 교토': '오사카·교토 지역으로 안내드릴게요. 아래 입력란에서 희망 날짜·플레이 인원·1인당 예산을 입력한 뒤 “상담에 반영”을 눌러주세요.',
@@ -1582,7 +1607,7 @@
     el.textContent = text;
     body.appendChild(el);
     scrollBottom();
-    fetch('/api/chat-sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: chatSessionId, role, content: text }) }).catch(() => {});
+    queueSessionMessage(role, text);
   }
 
   function addTyping() {
@@ -1756,7 +1781,7 @@
     const manWon = text.match(/(\d+(?:\.\d+)?)\s*만\s*원?/);
     const budget = won ? Number(won[1].replaceAll(',', '')) : manWon ? Math.round(Number(manWon[1]) * 10000) : 0;
     if (Number.isInteger(budget) && budget > 0 && budget <= 100000000) golfBudget.value = budget;
-    fetch('/api/chat-sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: chatSessionId, region: consultationRegion, golfDate: golfDate.value, stayEndDate: golfEndDate.value, players: golfPlayers.value, budgetPerPerson: golfBudget.value }) }).catch(() => {});
+    queueSessionConditions();
   }
 
   function consultationSummary() {
