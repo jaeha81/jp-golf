@@ -84,7 +84,13 @@ export default async function handler(req, res) {
     await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS quote_google_maps_url TEXT`;
     await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS hook_status TEXT NOT NULL DEFAULT 'not_configured'`;
     await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS hook_attempted_at TIMESTAMPTZ`;
+    await sql`ALTER TABLE customer_requests ADD COLUMN IF NOT EXISTS chat_session_id UUID`;
     await sql`CREATE INDEX IF NOT EXISTS customer_requests_status_created_idx ON customer_requests (status, created_at)`;
+    await sql`CREATE TABLE IF NOT EXISTS chat_sessions (
+      session_id UUID PRIMARY KEY, status TEXT NOT NULL DEFAULT 'active', region TEXT,
+      golf_date DATE, stay_end_date DATE, players INTEGER, budget_per_person INTEGER,
+      request_id BIGINT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
 
     if (req.method === 'POST') {
       let body = req.body;
@@ -101,17 +107,19 @@ export default async function handler(req, res) {
       if (body?.golfDate && body?.stayEndDate && body.stayEndDate < body.golfDate) return json(res, 400, { error: '귀국 날짜는 출발 날짜 이후여야 합니다.' });
       if (body?.stayNights !== '' && body?.stayNights != null && (!Number.isInteger(stayNights) || stayNights < 0 || stayNights > 30)) return json(res, 400, { error: '숙박 기간이 올바르지 않습니다.' });
       if (body?.players && (!Number.isInteger(players) || players < 1 || players > 20)) return json(res, 400, { error: '인원 수가 올바르지 않습니다.' });
-      const result = await sql`INSERT INTO customer_requests (name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request)
-        VALUES (${name}, ${contact}, ${body.golfDate || null}, ${body.stayEndDate || null}, ${body?.stayNights !== '' && body?.stayNights != null ? stayNights : null}, ${body.players ? players : null}, ${body.budgetPerPerson ? budget : null}, ${request})
+      const chatSessionId = typeof body?.chatSessionId === 'string' && /^[0-9a-f-]{36}$/i.test(body.chatSessionId) ? body.chatSessionId : null;
+      const result = await sql`INSERT INTO customer_requests (name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, chat_session_id)
+        VALUES (${name}, ${contact}, ${body.golfDate || null}, ${body.stayEndDate || null}, ${body?.stayNights !== '' && body?.stayNights != null ? stayNights : null}, ${body.players ? players : null}, ${body.budgetPerPerson ? budget : null}, ${request}, ${chatSessionId}::uuid)
         RETURNING id, name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, status, created_at`;
       const hookStatus = await notifyAdminWebhook(result[0]);
       const updated = await sql`UPDATE customer_requests SET hook_status=${hookStatus}, hook_attempted_at=NOW(), updated_at=NOW() WHERE id=${result[0].id}
         RETURNING id, status, hook_status, hook_attempted_at, created_at`;
+      if (chatSessionId) await sql`UPDATE chat_sessions SET request_id=${result[0].id}, status='submitted', updated_at=NOW() WHERE session_id=${chatSessionId}::uuid`;
       return json(res, 201, { request: updated[0] });
     }
 
     if (req.method === 'GET') {
-      const rows = await sql`SELECT id, name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, status, quote_course_name, quote_date, quote_tee_time, quote_price_per_person, quote_google_maps_url, hook_status, hook_attempted_at, created_at, updated_at
+      const rows = await sql`SELECT id, name, contact, golf_date, stay_end_date, stay_nights, players, budget_per_person, request, status, quote_course_name, quote_date, quote_tee_time, quote_price_per_person, quote_google_maps_url, hook_status, hook_attempted_at, chat_session_id, created_at, updated_at
         FROM customer_requests ORDER BY id ASC LIMIT 200`;
       return json(res, 200, { requests: rows });
     }
