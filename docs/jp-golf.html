@@ -1241,7 +1241,7 @@
     <form id="requestForm" class="booking-fields" aria-label="상담 의뢰 저장">
       <div class="booking-field"><label for="requestName">이름</label><input id="requestName" required maxlength="80" autocomplete="name" placeholder="홍길동"></div>
       <div class="booking-field"><label for="requestContact">연락처</label><input id="requestContact" required maxlength="120" autocomplete="tel" placeholder="이메일 또는 전화번호"></div>
-      <div class="booking-field" style="grid-column: 1 / -1"><label for="requestNote">원하는 조건</label><textarea id="requestNote" required maxlength="2000" rows="2" placeholder="지역, 일정, 라운드 수 등"></textarea></div>
+      <div class="booking-field" style="grid-column: 1 / -1"><label for="requestNote">추가 요청사항</label><textarea id="requestNote" maxlength="2000" rows="2" placeholder="채팅에서 전달한 조건은 자동 정리됩니다. 추가 요청이 있으면 입력해 주세요."></textarea></div>
       <label style="grid-column: 1 / -1; font-size: .78rem"><input type="checkbox" id="requestConsent" required> 상담 처리를 위해 입력한 연락처를 이용하는 데 동의합니다.</label>
       <button type="submit" class="booking-apply" id="submitRequest">상담 의뢰 저장</button>
       <p id="requestStatus" role="status" style="grid-column: 1 / -1; font-size: .8rem"></p>
@@ -1538,6 +1538,7 @@
 
   let chatMessages = [];
   let selectedCourse = null;
+  let consultationRegion = '';
   let idleConsultationTimer = null;
   let idlePromptShown = false;
   const GOLF_API_URL = '/api/golf-chat';
@@ -1720,6 +1721,51 @@
     stayLengthHint.textContent = nights === 0 ? '당일 일정' : `${nights}박 ${nights + 1}일 일정`;
   }
 
+  function isoDate(year, month, day) {
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    if (date.getUTCFullYear() !== Number(year) || date.getUTCMonth() !== Number(month) - 1 || date.getUTCDate() !== Number(day)) return '';
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  function extractConsultationConditions(text) {
+    const regionNames = ['도쿄 근교', '지바', '가고시마', '오사카', '교토', '후쿠오카', '하코네', '후지', '홋카이도', '오키나와', '나고야', '센다이', '삿포로', '나리타'];
+    const region = regionNames.find(name => text.includes(name));
+    if (region) consultationRegion = region;
+
+    const dateRange = text.match(/(20\d{2})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*일?\s*(?:부터|~|[-–])\s*(?:20\d{2}\s*[.\-/년]\s*)?(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*일?/);
+    const singleDate = text.match(/(20\d{2})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*일?/);
+    if (dateRange) {
+      const start = isoDate(dateRange[1], dateRange[2], dateRange[3]);
+      const end = isoDate(dateRange[1], dateRange[4], dateRange[5]);
+      if (start) golfDate.value = start;
+      if (end && end >= start) golfEndDate.value = end;
+      updateStayLength();
+    } else if (singleDate) {
+      const date = isoDate(singleDate[1], singleDate[2], singleDate[3]);
+      if (date) { golfDate.value = date; updateStayLength(); }
+    }
+
+    const players = text.match(/(?:^|\s)([1-8])\s*명(?:\s|$|[,.!])/);
+    if (players) golfPlayers.value = players[1];
+
+    const won = text.match(/(\d{1,3}(?:,\d{3})+)\s*원/);
+    const manWon = text.match(/(\d+(?:\.\d+)?)\s*만\s*원?/);
+    const budget = won ? Number(won[1].replaceAll(',', '')) : manWon ? Math.round(Number(manWon[1]) * 10000) : 0;
+    if (Number.isInteger(budget) && budget > 0 && budget <= 100000000) golfBudget.value = budget;
+  }
+
+  function consultationSummary() {
+    const details = [];
+    if (consultationRegion) details.push(`희망 지역: ${consultationRegion}`);
+    if (golfDate.value) details.push(`희망 플레이 날짜: ${golfDate.value}`);
+    if (golfEndDate.value) details.push(`귀국 날짜: ${golfEndDate.value}`);
+    if (golfPlayers.value) details.push(`플레이 인원: ${golfPlayers.value === '8' ? '8명 이상' : `${golfPlayers.value}명`}`);
+    if (golfBudget.value) details.push(`1인당 선호 예산: ${Number(golfBudget.value).toLocaleString('ko-KR')}원`);
+    const messages = chatMessages.filter(message => message.role === 'user').slice(-6).map(message => message.content).join(' / ');
+    if (messages) details.push(`고객 상담 발화: ${messages}`);
+    return details.join('\n');
+  }
+
   function applySelectedConditions() {
     const parts = [];
     if (golfDate.value) parts.push(`희망 날짜는 ${formatDate(golfDate.value)}입니다.`);
@@ -1742,6 +1788,7 @@
     clearIdleConsultationTimer();
     idlePromptShown = false;
     if (!options.skipEcho) addMsg('user', text);
+    extractConsultationConditions(text);
 
     // 처음부터 다시 요청
     if (/처음부터 다시/.test(text)) {
@@ -1868,7 +1915,7 @@
           stayNights: stayNightsFromDates(),
           players: document.getElementById('golfPlayers').value,
           budgetPerPerson: document.getElementById('golfBudget').value,
-          request: document.getElementById('requestNote').value
+          request: [document.getElementById('requestNote').value.trim(), consultationSummary()].filter(Boolean).join('\n\n')
         })
       });
       const contentType = response.headers.get('content-type') || '';
